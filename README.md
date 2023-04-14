@@ -21,3 +21,9 @@ Optional components include:
 6.	Enrichment Function with ACS driver
 7.	Azure Cognitive Search
 8.	Azure OpenAI with Embeddings API
+
+## Deployment
+1. Clone the repo and install prerequisities (.NET SDK, Azure Functions SDK)
+2. Create embedding collection in yoru Cosmos DB database with /id as a shard key and minimal throughput
+3. Change the local.settings.json to reflect your subscription/services details (self-descriptive)
+4. Run/Debug and watch the embedding collection populated
