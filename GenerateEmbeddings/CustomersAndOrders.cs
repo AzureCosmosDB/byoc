@@ -18,7 +18,8 @@ namespace Embeddings
         private readonly OpenAI _openAI = new OpenAI();
 
         private static readonly CosmosClient _cosmos = new CosmosClient(Environment.GetEnvironmentVariable("CosmosDBConnection"));
-        private readonly Container _customerContainer = _cosmos.GetContainer("CosmicWorksDB", "customer");
+        //private readonly Container _customerContainer = _cosmos.GetContainer("CosmicWorksDB", "customer");
+        private readonly Container _embeddingContainer = _cosmos.GetContainer("CosmicWorksDB", "embedding");
 
         [FunctionName("CustomersAndOrders")]
         public async Task Run([CosmosDBTrigger(
@@ -34,24 +35,24 @@ namespace Embeddings
             {
                 log.LogInformation("Generating embeddings for " + input.Count + "Customers and Sales Orders");
 
-                
+
                 foreach (dynamic item in input)
                 {
-                    
+
                     if (item.type == "customer")
                     {
                         Customer customer = item.ToObject<Customer>();
                         await GenerateCustomerEmbeddings(customer, log);
 
                     }
-                    else 
+                    else
                     if (item.type == "salesOrder")
                     {
                         SalesOrder salesOrder = item.ToObject<SalesOrder>();
                         await GenerateOrderEmbeddings(salesOrder, log);
 
                     }
-                    
+
                 }
 
             }
@@ -62,17 +63,27 @@ namespace Embeddings
         {
 
             //Make a JSON string from the customer object
-            string foo = JObject.FromObject(customer).ToString();
+            string foo = JObject.FromObject(customer).ToString(Newtonsoft.Json.Formatting.None);
+            int len = foo.Length;
+            Embedding emb = new Embedding();
+            emb.id = Guid.NewGuid().ToString();
+            emb.type = EmbeddingType.Customer;
 
+            try
+            {
+                //Get the embeddings from OpenAI
+                var bar = await _openAI.GetEmbeddingsAsync(foo, log);
+                //Update Customer object with embeddings
+                emb.embeddings = (List<float>)bar;
+            }
+            catch (Exception x)
+            {
+                log.LogError("Exception while generating embeddings for [" + customer.firstName + " " + customer.lastName + "]: " + x.Message);
+            }
 
-            //Get the embeddings from OpenAI
-            var bar = await _openAI.GetEmbeddingsAsync(foo, log);
-
-            //Update Customer object with embeddings
-            customer.embeddings = (List<float>)bar;
 
             //Update Cosmos DB with embeddings
-            await _customerContainer.ReplaceItemAsync(customer, customer.id, new PartitionKey(customer.customerId));
+            await _embeddingContainer.CreateItemAsync(emb);
 
             //To-Do: Update Redis Cache with embeddings
 
@@ -85,16 +96,26 @@ namespace Embeddings
 
             //Make a JSON string from the salesOrder object
             string foo = JObject.FromObject(salesOrder).ToString();
+            int len = foo.Length;
+            Embedding emb = new Embedding();
+            emb.id = Guid.NewGuid().ToString();
+            emb.type = EmbeddingType.Order;
 
+            try
+            {
+                //Get the embeddings from OpenAI
+                var bar = await _openAI.GetEmbeddingsAsync(foo, log);
+                //Update SalesOrder object with embeddings
+                emb.embeddings = (List<float>)bar;
+            }
+            catch (Exception x)
+            {
+                log.LogError("Exception while generating embeddings for [" + salesOrder.id + "]: " + x.Message);
+            }
 
-            //Get the embeddings from OpenAI
-            var bar = await _openAI.GetEmbeddingsAsync(foo, log);
-
-            //Update SalesOrder object with embeddings
-            salesOrder.embeddings = (List<float>)bar;
 
             //Update Cosmos DB with embeddings
-            await _customerContainer.ReplaceItemAsync(salesOrder, salesOrder.id, new PartitionKey(salesOrder.customerId));
+            await _embeddingContainer.CreateItemAsync(emb);
 
 
             //To-Do: Update Redis Cache with embeddings

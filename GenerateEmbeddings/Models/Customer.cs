@@ -20,8 +20,6 @@ namespace Embeddings.Models
         public List<CustomerAddress> addresses { get; set; }
         public Password password { get; set; }
         public int salesOrderCount { get; set; }
-
-        public List<float> embeddings { get; set; }
     }
 
     public class Password

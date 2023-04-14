@@ -17,8 +17,6 @@ namespace Embeddings.Models
         public string description { get; set; }
         public double price { get; set; }
         public List<Tag> tags { get; set; }
-
-        public List<float> embeddings { get; set; }
     }
 
     public class ProductCategory

@@ -3,11 +3,11 @@
   "Values": {
     "AzureWebJobsStorage": "UseDevelopmentStorage=true",
     "FUNCTIONS_WORKER_RUNTIME": "dotnet",
-    "CosmosDBConnection": "",
-    "OpenAIEndpoint": "",
-    "OpenAiKey": "",
-    "OpenAiDeployment": "",
-    "OpenAiMaxTokens": "2048",
-    "RedisConnection": ""
+    "CosmosDBConnection": "AccountEndpoint=https://byoc-cosmos.documents.azure.com:443/;AccountKey=c7zoa6CvSNOhzjTQcXfrA4GcJkgEO6aeAnnv0BvU4yjqgwdklEFespfTgiTHNTtJJguGDXQKJaPYACDbsRa0fg==;",
+    "OpenAIEndpoint": "https://byoc-openai.openai.azure.com/",
+    "OpenAiKey": "f8cacf56ed47458b85d12b6c4d3e629d",
+    "OpenAiDeployment": "byoc-embeddings",
+    "OpenAiMaxTokens": "8191",
+    "RedisConnection": "byoc-redis.redis.cache.windows.net:6380,password=Jvzlqz242BblWt5ayeImbEiwV3zqaD7RuAzCaFH8yf8=,ssl=True,abortConnect=False"
   }
 }

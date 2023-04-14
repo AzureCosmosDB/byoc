@@ -14,8 +14,6 @@ namespace Embeddings.Models
         public string orderDate { get; set; }
         public string shipDate { get; set; }
         public List<SalesOrderDetails> details { get; set; }
-
-        public List<float> embeddings { get; set; }
     }
 
     public class SalesOrderDetails

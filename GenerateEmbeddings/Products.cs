@@ -16,8 +16,8 @@ namespace GenerateEmbeddings
         private readonly OpenAI _openAI = new OpenAI();
 
         private static readonly CosmosClient _cosmos = new CosmosClient(Environment.GetEnvironmentVariable("CosmosDBConnection"));
-        private readonly Container _productContainer = _cosmos.GetContainer("CosmicWorksDB", "product");
-
+        //private readonly Container _productContainer = _cosmos.GetContainer("CosmicWorksDB", "product");
+        private readonly Container _embeddingContainer = _cosmos.GetContainer("CosmicWorksDB", "embedding");
 
         [FunctionName("Products")]
         public async Task Run([CosmosDBTrigger(
@@ -49,16 +49,26 @@ namespace GenerateEmbeddings
 
             //Make a JSON string from the product object
             string foo = JObject.FromObject(product).ToString();
+            int len = foo.Length;
+            Embedding emb = new Embedding();
+            emb.id = Guid.NewGuid().ToString();
+            emb.type = EmbeddingType.Product;
 
+            try
+            {
+                //Get the embeddings from OpenAI
+                var bar = await _openAI.GetEmbeddingsAsync(foo, log);
+                //Update Customer object with embeddings
+                emb.embeddings = (List<float>)bar;
+            }
+            catch (Exception x)
+            {
+                log.LogError("Exception while generating embeddings for [" + product.name + "]: " + x.Message);
+            }
 
-            //Get the embeddings from OpenAI
-            var bar = await _openAI.GetEmbeddingsAsync(foo, log);
-
-            //Update Customer object with embeddings
-            product.embeddings = (List<float>)bar;
 
             //Update Cosmos DB with embeddings
-            await _productContainer.ReplaceItemAsync(product, product.id, new PartitionKey(product.categoryId));
+            await _embeddingContainer.CreateItemAsync(emb);
 
             //To-Do: Update Redis Cache with embeddings
 
