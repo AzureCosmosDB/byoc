@@ -16,8 +16,10 @@ namespace GenerateEmbeddings
         private readonly OpenAI _openAI = new OpenAI();
 
         private static readonly CosmosClient _cosmos = new CosmosClient(Environment.GetEnvironmentVariable("CosmosDBConnection"));
-        //private readonly Container _productContainer = _cosmos.GetContainer("CosmicWorksDB", "product");
         private readonly Container _embeddingContainer = _cosmos.GetContainer("CosmicWorksDB", "embedding");
+
+        private static RedisConnection _redisConnection;
+        private static Redis _redis = new Redis();
 
         [FunctionName("Products")]
         public async Task Run([CosmosDBTrigger(
@@ -32,21 +34,24 @@ namespace GenerateEmbeddings
             if (input != null && input.Count > 0)
             {
                 log.LogInformation("Generating embeddings for " + input.Count + " products");
-
-
-                foreach (Product item in input)
+                try
                 {
+                    _redisConnection = await RedisConnection.InitializeAsync(connectionString: Environment.GetEnvironmentVariable("RedisConnection").ToString());
 
-                    await GenerateProductEmbeddings(item, log);
-
+                    foreach (Product item in input)
+                    {
+                        await GenerateProductEmbeddings(item, log);
+                    }
                 }
-
+                finally
+                {
+                    _redisConnection.Dispose();
+                }
             }
         }
 
         public async Task GenerateProductEmbeddings(Product product, ILogger log)
         {
-
             //Make a JSON string from the product object
             string foo = JObject.FromObject(product).ToString();
             int len = foo.Length;
@@ -70,8 +75,8 @@ namespace GenerateEmbeddings
             //Update Cosmos DB with embeddings
             await _embeddingContainer.CreateItemAsync(emb);
 
-            //To-Do: Update Redis Cache with embeddings
-
+            //Update Redis Cache with embeddings
+            await _redis.CacheEmbeddings(emb, _redisConnection, log);
 
             log.LogInformation("Generated embeddings for product: " + product.name);
         }

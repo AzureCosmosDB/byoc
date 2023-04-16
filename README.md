@@ -2,7 +2,7 @@
 
 This solution demonstrates the use of Cosmos DB + OpenAI combination with useful generic functionality applicable to many Cosmos DB deployments out there, that is – answering natural language questions about the data stored in Cosmos DB containers. It uses Cosmic Works dataset for retail (which could be replaced with any other dataset with some text in it) and answers some of the product questions intelligently, even though no enrichments are done for retail specifically. 
 
-Behind the scenes it uses Cosmos DB for persistent storage of original data, embedding vectors, and orchestration of the whole process through Change Feed and Azure Functions:
+Behind the scenes, it uses Cosmos DB for persistent storage of original data, embedding vectors, and orchestration of the whole process through Change Feed and Azure Functions:
 
 <p align="center">
     <img src="img/architecture.png" width="100%">
