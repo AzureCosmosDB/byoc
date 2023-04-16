@@ -12,6 +12,8 @@ namespace GenerateEmbeddings.Services
     {
         // Redis Cache for Embeddings
 
+        private static readonly string redisConnectionString = Environment.GetEnvironmentVariable("RedisConnection");
+
         public async Task CacheEmbeddings(Embedding emb, RedisConnection redisConnection, ILogger log)
         {
             try

@@ -17,18 +17,20 @@ namespace Embeddings
 
         private readonly OpenAI _openAI = new OpenAI();
 
-        private static readonly CosmosClient _cosmos = new CosmosClient(Environment.GetEnvironmentVariable("CosmosDBConnection"));
-        //private readonly Container _customerContainer = _cosmos.GetContainer("CosmicWorksDB", "customer");
-        private readonly Container _embeddingContainer = _cosmos.GetContainer("CosmicWorksDB", "embedding");
 
         [FunctionName("CustomersAndOrders")]
-        public async Task Run([CosmosDBTrigger(
-            databaseName: "CosmicWorksDB",
-            containerName: "customer",
-            StartFromBeginning = true,
-            Connection = "CosmosDBConnection",
-            LeaseContainerName = "leases",
-            CreateLeaseContainerIfNotExists = true)]IReadOnlyList<JObject> input,
+        public async Task Run(
+            [CosmosDBTrigger(
+                databaseName: "CosmicWorksDB",
+                containerName: "customer",
+                StartFromBeginning = true,
+                Connection = "CosmosDBConnection",
+                LeaseContainerName = "leases",
+                CreateLeaseContainerIfNotExists = true)]IReadOnlyList<JObject> input,
+            [CosmosDB(
+                databaseName: "CosmicWorksDB",
+                containerName: "embedding",
+                Connection = "CosmosDBConnection")]IAsyncCollector<Embedding> output,
             ILogger log)
         {
             if (input != null && input.Count > 0)
@@ -42,14 +44,14 @@ namespace Embeddings
                     if (item.type == "customer")
                     {
                         Customer customer = item.ToObject<Customer>();
-                        await GenerateCustomerEmbeddings(customer, log);
+                        await GenerateCustomerEmbeddings(customer, output, log);
 
                     }
                     else
                     if (item.type == "salesOrder")
                     {
                         SalesOrder salesOrder = item.ToObject<SalesOrder>();
-                        await GenerateOrderEmbeddings(salesOrder, log);
+                        await GenerateOrderEmbeddings(salesOrder, output, log);
 
                     }
 
@@ -59,22 +61,25 @@ namespace Embeddings
         }
 
 
-        public async Task GenerateCustomerEmbeddings(Customer customer, ILogger log)
+        public async Task GenerateCustomerEmbeddings(Customer customer, IAsyncCollector<Embedding> output, ILogger log)
         {
 
-            //Make a JSON string from the customer object
-            string foo = JObject.FromObject(customer).ToString(Newtonsoft.Json.Formatting.None);
-            int len = foo.Length;
-            Embedding emb = new Embedding();
-            emb.id = Guid.NewGuid().ToString();
-            emb.type = EmbeddingType.Customer;
+            //Serialize the customer object to send to OpenAI
+            string sCustomer = JObject.FromObject(customer).ToString(Newtonsoft.Json.Formatting.None);
+            //int len = sCustomer.Length;
+            
+            
+            Embedding embedding = new Embedding();
+            embedding.id = Guid.NewGuid().ToString();
+            embedding.type = EmbeddingType.Customer;
 
             try
             {
                 //Get the embeddings from OpenAI
-                var bar = await _openAI.GetEmbeddingsAsync(foo, log);
-                //Update Customer object with embeddings
-                emb.embeddings = (List<float>)bar;
+                var listEmbeddings = await _openAI.GetEmbeddingsAsync(sCustomer, log);
+
+                //Add to embeddings object
+                embedding.embeddings = (List<float>)listEmbeddings;
             }
             catch (Exception x)
             {
@@ -82,8 +87,9 @@ namespace Embeddings
             }
 
 
-            //Update Cosmos DB with embeddings
-            await _embeddingContainer.CreateItemAsync(emb);
+            //Insert embeddings into Cosmos DB
+            await output.AddAsync(embedding);
+
 
             //To-Do: Update Redis Cache with embeddings
 
@@ -91,22 +97,26 @@ namespace Embeddings
             log.LogInformation("Generated Embeddings for customer : " + customer.firstName + " " + customer.lastName);
         }
 
-        public async Task GenerateOrderEmbeddings(SalesOrder salesOrder, ILogger log)
+        public async Task GenerateOrderEmbeddings(SalesOrder salesOrder, IAsyncCollector<Embedding> output, ILogger log)
         {
 
-            //Make a JSON string from the salesOrder object
-            string foo = JObject.FromObject(salesOrder).ToString();
-            int len = foo.Length;
-            Embedding emb = new Embedding();
-            emb.id = Guid.NewGuid().ToString();
-            emb.type = EmbeddingType.Order;
+            //Serialize the salesOrder to send to OpenAI
+            string sSalesOrder = JObject.FromObject(salesOrder).ToString();
+            //int len = sSalesOrder.Length;
+            
+            
+            Embedding embedding = new Embedding();
+            embedding.id = Guid.NewGuid().ToString();
+            embedding.type = EmbeddingType.Order;
 
             try
             {
+                
                 //Get the embeddings from OpenAI
-                var bar = await _openAI.GetEmbeddingsAsync(foo, log);
-                //Update SalesOrder object with embeddings
-                emb.embeddings = (List<float>)bar;
+                var listEmbeddings = await _openAI.GetEmbeddingsAsync(sSalesOrder, log);
+                
+                //Add to embeddings object
+                embedding.embeddings = (List<float>)listEmbeddings;
             }
             catch (Exception x)
             {
@@ -114,8 +124,8 @@ namespace Embeddings
             }
 
 
-            //Update Cosmos DB with embeddings
-            await _embeddingContainer.CreateItemAsync(emb);
+            //Insert embeddings into Cosmos DB
+            await output.AddAsync(embedding);
 
 
             //To-Do: Update Redis Cache with embeddings
