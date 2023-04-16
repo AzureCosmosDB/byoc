@@ -1,5 +1,5 @@
 using Embeddings.Models;
-using GenerateEmbeddings.Services;
+using DataCopilot.Services;
 using Microsoft.Azure.Cosmos;
 using Microsoft.Azure.WebJobs;
 using Microsoft.Extensions.Logging;
@@ -8,7 +8,7 @@ using System;
 using System.Collections.Generic;
 using System.Threading.Tasks;
 
-namespace GenerateEmbeddings
+namespace DataCopilot
 {
     public class Products
     {

@@ -6,7 +6,7 @@ using Microsoft.Extensions.Logging;
 using StackExchange.Redis;
 using Embeddings.Models;
 
-namespace GenerateEmbeddings.Services
+namespace DataCopilot.Services
 {
     public class Redis
     {

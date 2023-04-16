@@ -4,7 +4,7 @@ using System.Net.Sockets;
 using System.Threading;
 using System.Threading.Tasks;
 
-namespace GenerateEmbeddings.Services
+namespace DataCopilot.Services
 {
     public class RedisConnection : IDisposable
     {

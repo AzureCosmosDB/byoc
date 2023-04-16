@@ -5,11 +5,10 @@ using System;
 using System.Collections.Generic;
 using System.Threading.Tasks;
 
-namespace GenerateEmbeddings.Services;
+namespace DataCopilot.Services;
 
 public class OpenAI
 {
-
     private static readonly string openAIEndpoint = Environment.GetEnvironmentVariable("OpenAIEndpoint");
     private static readonly string openAIKey = Environment.GetEnvironmentVariable("OpenAIKey");
     private static readonly string openAIDeployment = Environment.GetEnvironmentVariable("OpenAIDeployment");
@@ -19,10 +18,8 @@ public class OpenAI
 
     public async Task<IReadOnlyList<float>> GetEmbeddingsAsync(dynamic data, ILogger log)
     {
-
         try
         {
-
             EmbeddingsOptions options = new EmbeddingsOptions(data)
             {
                 Input = data
@@ -41,7 +38,27 @@ public class OpenAI
         {
             log.LogError(ex.Message);
             return null;
+        }
+    }
 
+    public async Task<string> GetAnswerAsync(dynamic data, ILogger log)
+    {
+        try
+        {
+            log.LogInformation($"Input: {data}");
+            CompletionsOptions completionsOptions = new CompletionsOptions();
+            completionsOptions.Prompts.Add(data);
+
+            Response<Completions> completionsResponse = await client.GetCompletionsAsync(openAIDeployment, completionsOptions);
+            string completion = completionsResponse.Value.Choices[0].Text;
+            log.LogInformation($"Answer: {completion}");
+
+            return completion;
+        }
+        catch (Exception ex)
+        {
+            log.LogError(ex.Message);
+            return null;
         }
     }
 }

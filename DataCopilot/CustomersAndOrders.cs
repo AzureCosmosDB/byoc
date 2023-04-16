@@ -8,11 +8,11 @@ using Newtonsoft.Json.Linq;
 using Embeddings.Models;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Azure.Cosmos;
-using GenerateEmbeddings.Services;
+using DataCopilot.Services;
 
 namespace Embeddings
 {
-    public class CustomersAndOrders
+    public class DataCopilot
     {
 
         private readonly OpenAI _openAI = new OpenAI();

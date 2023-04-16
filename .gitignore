@@ -350,4 +350,7 @@ MigrationBackup/
 
 # Ionide (cross platform F# VS Code tools) working folder
 .ionide/
-/GenerateEmbeddings/local.settings.json
+
+/DataCopilot/local.settings.json
+__azurite_db_blob__.json
+__azurite_db_blob_extent__.json
