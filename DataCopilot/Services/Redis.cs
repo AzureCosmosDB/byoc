@@ -45,7 +45,7 @@ namespace DataCopilot.Services
             log.LogInformation($"Deserialized Embedding .NET object:{Environment.NewLine}");
             log.LogInformation($"Embedding.type : {embFromCache.type}");
             log.LogInformation($"Embedding.embeddings   : {embFromCache.embeddings.ToString()}");
-            log.LogInformation($"Employee.id  : {embFromCache.id}{Environment.NewLine}");
+            log.LogInformation($"Embedding.id  : {embFromCache.id}{Environment.NewLine}");
         }
 
     }

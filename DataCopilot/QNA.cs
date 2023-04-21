@@ -41,7 +41,9 @@ namespace DataCopilot
                 {
                     _redisConnection = await RedisConnection.InitializeAsync(connectionString: Environment.GetEnvironmentVariable("RedisConnection").ToString());
                     // TODO: Generate embeddings for the question and match them with ones in Redis
-                    await _openAI.GetAnswerAsync(query, log);
+                    //final_answer, sources, likely_sources, session_id = agent.run(query, session_id, redis_conn, filter_param)
+
+                    await _openAI.GetChatResponse(query, new List<string>().AsQueryable(), log);
                 }
                 finally
                 {
