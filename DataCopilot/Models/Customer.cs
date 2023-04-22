@@ -4,9 +4,9 @@ using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
 
-namespace Embeddings.Models
+namespace DataCopilot.Models
 {
-    public class Customer
+    public class Customer : DocModel
     {
         public string id { get; set; }
         public string type { get; set; }

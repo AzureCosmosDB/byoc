@@ -5,17 +5,19 @@ using Microsoft.Azure.WebJobs;
 using System.Collections.Generic;
 using Microsoft.Extensions.Logging;
 using Newtonsoft.Json.Linq;
-using Embeddings.Models;
+using DataCopilot.Models;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Azure.Cosmos;
 using DataCopilot.Services;
 
-namespace Embeddings
+namespace DataCopilot
 {
-    public class DataCopilot
+    public class CustomersAndOrders
     {
 
         private readonly OpenAI _openAI = new OpenAI();
+
+        private static Redis _redis = new Redis();
 
 
         [FunctionName("CustomersAndOrders")]
@@ -37,26 +39,31 @@ namespace Embeddings
             {
                 log.LogInformation("Generating embeddings for " + input.Count + "Customers and Sales Orders");
 
+                try
+                {
+                    foreach (dynamic item in input)
+                    {
 
-                foreach (dynamic item in input)
+                        if (item.type == "customer")
+                        {
+                            Customer customer = item.ToObject<Customer>();
+                            await GenerateCustomerEmbeddings(customer, output, log);
+
+                        }
+                        else
+                        if (item.type == "salesOrder")
+                        {
+                            SalesOrder salesOrder = item.ToObject<SalesOrder>();
+                            await GenerateOrderEmbeddings(salesOrder, output, log);
+
+                        }
+
+                    }
+                }
+                finally
                 {
 
-                    if (item.type == "customer")
-                    {
-                        Customer customer = item.ToObject<Customer>();
-                        await GenerateCustomerEmbeddings(customer, output, log);
-
-                    }
-                    else
-                    if (item.type == "salesOrder")
-                    {
-                        SalesOrder salesOrder = item.ToObject<SalesOrder>();
-                        await GenerateOrderEmbeddings(salesOrder, output, log);
-
-                    }
-
                 }
-
             }
         }
 
@@ -79,7 +86,7 @@ namespace Embeddings
                 var listEmbeddings = await _openAI.GetEmbeddingsAsync(sCustomer, log);
 
                 //Add to embeddings object
-                embedding.embeddings = (List<float>)listEmbeddings;
+                embedding.embeddings = (float[])listEmbeddings;
             }
             catch (Exception x)
             {
@@ -90,11 +97,10 @@ namespace Embeddings
             //Insert embeddings into Cosmos DB
             await output.AddAsync(embedding);
 
+            //Update Redis Cache with embeddings
+            await _redis.CacheEmbeddings(embedding, log);
 
-            //To-Do: Update Redis Cache with embeddings
-
-
-            log.LogInformation("Generated Embeddings for customer : " + customer.firstName + " " + customer.lastName);
+            log.LogInformation("Cached embeddings for customer : " + customer.firstName + " " + customer.lastName);
         }
 
         public async Task GenerateOrderEmbeddings(SalesOrder salesOrder, IAsyncCollector<Embedding> output, ILogger log)
@@ -116,7 +122,7 @@ namespace Embeddings
                 var listEmbeddings = await _openAI.GetEmbeddingsAsync(sSalesOrder, log);
                 
                 //Add to embeddings object
-                embedding.embeddings = (List<float>)listEmbeddings;
+                embedding.embeddings = (float[])listEmbeddings;
             }
             catch (Exception x)
             {
@@ -128,10 +134,10 @@ namespace Embeddings
             await output.AddAsync(embedding);
 
 
-            //To-Do: Update Redis Cache with embeddings
+            //Update Redis Cache with embeddings
+            await _redis.CacheEmbeddings(embedding, log);
 
-
-            log.LogInformation("Generated Embeddings for Sales Order Id: " + salesOrder.id);
+            log.LogInformation("Cached embeddings for Sales Order Id: " + salesOrder.id);
         }
     }
 }

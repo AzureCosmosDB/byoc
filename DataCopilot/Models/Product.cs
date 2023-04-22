@@ -5,9 +5,9 @@ using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
 
-namespace Embeddings.Models
+namespace DataCopilot.Models
 {
-    public class Product
+    public class Product : DocModel
     {
         public string id { get; set; }
         public string categoryId { get; set; }

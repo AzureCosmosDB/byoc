@@ -1,4 +1,4 @@
-using Embeddings.Models;
+using DataCopilot.Models;
 using DataCopilot.Services;
 using Microsoft.Azure.Cosmos;
 using Microsoft.Azure.WebJobs;
@@ -15,7 +15,6 @@ namespace DataCopilot
 
         private readonly OpenAI _openAI = new OpenAI();
 
-        private static RedisConnection _redisConnection;
         private static Redis _redis = new Redis();
 
         [FunctionName("Products")]
@@ -38,8 +37,6 @@ namespace DataCopilot
                 log.LogInformation("Generating embeddings for " + input.Count + " products");
                 try
                 {
-                    _redisConnection = await RedisConnection.InitializeAsync(connectionString: Environment.GetEnvironmentVariable("RedisConnection").ToString());
-
                     foreach (Product item in input)
                     {
                         await GenerateProductEmbeddings(item, output, log);
@@ -47,7 +44,6 @@ namespace DataCopilot
                 }
                 finally
                 {
-                    _redisConnection.Dispose();
                 }
             }
         }
@@ -71,7 +67,7 @@ namespace DataCopilot
 
 
                 //Add to embeddings object
-                embedding.embeddings = (List<float>)listEmbeddings;
+                embedding.embeddings = (float[])listEmbeddings;
             }
             catch (Exception x)
             {
@@ -84,9 +80,9 @@ namespace DataCopilot
             
 
             //Update Redis Cache with embeddings
-            await _redis.CacheEmbeddings(embedding, _redisConnection, log);
+            await _redis.CacheEmbeddings(embedding, log);
 
-            log.LogInformation("Generated embeddings for product: " + product.name);
+            log.LogInformation("Cached embeddings for product: " + product.name);
         }
     }
 }

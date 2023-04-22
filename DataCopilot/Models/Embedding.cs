@@ -5,13 +5,13 @@ using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
 
-namespace Embeddings.Models
+namespace DataCopilot.Models
 {
-    public class Embedding
+    public class Embedding : DocModel
     {   
         public string id { get; set; }
         public EmbeddingType type { get; set; }
-        public List<float> embeddings { get; set; }
+        public float[] embeddings { get; set; }
     }
 
     public enum EmbeddingType : ushort
