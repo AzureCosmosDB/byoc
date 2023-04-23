@@ -12,7 +12,9 @@ public class OpenAI
 {
     private static readonly string openAIEndpoint = Environment.GetEnvironmentVariable("OpenAIEndpoint");
     private static readonly string openAIKey = Environment.GetEnvironmentVariable("OpenAIKey");
-    private static readonly string openAIDeployment = Environment.GetEnvironmentVariable("OpenAIDeployment");
+    private static readonly string openAIEmbeddings = Environment.GetEnvironmentVariable("OpenAIEmbeddings");    
+    private static readonly string openAICompletions = Environment.GetEnvironmentVariable("OpenAICompletions");
+
     private static readonly int openAIMaxTokens = int.Parse(Environment.GetEnvironmentVariable("OpenAIMaxTokens"));
 
     private readonly OpenAIClient client = new(new Uri(openAIEndpoint), new AzureKeyCredential(openAIKey));
@@ -27,7 +29,7 @@ public class OpenAI
                 //InputType = "foo"
             };
 
-            var response = await client.GetEmbeddingsAsync(openAIDeployment, options);
+            var response = await client.GetEmbeddingsAsync(openAIEmbeddings, options);
 
             Azure.AI.OpenAI.Embeddings embeddings = response.Value;
 
@@ -77,7 +79,7 @@ public class OpenAI
         try
         {
 
-            Response<ChatCompletions> completionsResponse = await client.GetChatCompletionsAsync(openAIDeployment, request);
+            Response<ChatCompletions> completionsResponse = await client.GetChatCompletionsAsync(openAICompletions, request);
             string completion = completionsResponse.Value.Choices[0].Message.Content;
             log.LogInformation($"Returning completion: {completion}");
 

@@ -19,7 +19,7 @@ namespace DataCopilot
     public class Chat
     {
         private readonly OpenAI _openAI = new OpenAI();
-        private static Redis _redis = new Redis();
+        private static Redis _redis;
         private static CosmosConnection cosmosConnection = new CosmosConnection(Environment.GetEnvironmentVariable("CosmosDBConnection"));
 
         [FunctionName("Chat")]
@@ -41,6 +41,7 @@ namespace DataCopilot
             if (req == null)
                 return;
 
+            _redis = new Redis(log);
             // query = get_param(req, 'query')
             // session_id = get_param(req, 'session_id')
             // filter_param = get_param(req, 'filter')
@@ -48,13 +49,12 @@ namespace DataCopilot
 
             string filter_param = req.Query["filter"];
             string session_id =  req.Query["session_id"];
-            string prompt =  req.Query["prompt"];                
+            query.QueryText =  req.Query["prompt"];                
             string search_method =  req.Query["search_method"];
             
-            log.LogInformation("Processing the query: " + prompt);
+            log.LogInformation("Processing the query: " + query.QueryText);
             try
             {
-
                 if (chatRequest is null || query.ResetContext)
                 {
                     var resultList = new List<DocModel>(query.ResultsToShow);
@@ -63,6 +63,7 @@ namespace DataCopilot
                     _errorMessage = "";
 
                     var vector = await _openAI.GetEmbeddingsAsync(query.QueryText, log);
+                    
                     var db = _redis.GetDatabase();
                     var memory = new ReadOnlyMemory<float>(vector);
 

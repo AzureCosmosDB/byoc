@@ -16,6 +16,7 @@ namespace DataCopilot.Services
         //private static readonly string redisConnectionString = Environment.GetEnvironmentVariable("RedisConnection");
 
         private static readonly ConnectionMultiplexer _connectionMultiplexer = ConnectionMultiplexer.Connect(Environment.GetEnvironmentVariable("RedisConnection"));
+        ILogger log;
 
         // private static async Task RunRedisCommandsAsync(Embedding emb, ILogger log)
         // {
@@ -41,8 +42,9 @@ namespace DataCopilot.Services
         string? _errorMessage;
         List<string> _statusMessages = new();
 
-        public Redis()
+        public Redis(ILogger log)
         {
+            this.log = log;
             CreateRedisIndex();
         }
 
@@ -63,24 +65,34 @@ namespace DataCopilot.Services
 
             try
             {
-                _statusMessages.Add("Checking if Redis index exists...");
+                log.LogInformation("Checking if Redis index exists...");
                 var db = _connectionMultiplexer.GetDatabase();
-                var index = await db.ExecuteAsync("FT.INFO", "embeddingIndex");
-                if (!index.IsNull)
+
+                RedisResult index = null;
+                try
                 {
-                    _statusMessages.Add("Redis index for embeddings already exists. Skipping...");
+                    index = await db.ExecuteAsync("FT.INFO", "embeddingIndex");
+                }
+                catch (StackExchange.Redis.RedisServerException redisX)
+                {
+                    log.LogInformation("Exception while checking embedding index:" + redisX.Message);
+                }
+                if (index != null)
+                {
+                    log.LogInformation("Redis index for embeddings already exists. Skipping...");
                     return;
                 }
                 
-                _statusMessages.Add("Creating Redis index...");
+                log.LogInformation("Creating Redis index...");
                 //var db = _connectionMultiplexer.GetDatabase();
                 var _ = await db.ExecuteAsync("FT.CREATE",
                     "embeddingIndex", "SCHEMA", "vector", "VECTOR", "HNSW", "6", "TYPE", "FLOAT32", "DISTANCE_METRIC", "COSINE", "DIM", "1536");
-                _statusMessages.Add("Created Redis index for embeddings");
+                log.LogInformation("Created Redis index for embeddings");
             }
             catch (Exception e)
             {
                 _errorMessage = e.ToString();
+                log.LogError(_errorMessage);
             }
         }
 

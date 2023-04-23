@@ -15,7 +15,7 @@ namespace DataCopilot
 
         private readonly OpenAI _openAI = new OpenAI();
 
-        private static Redis _redis = new Redis();
+        private static Redis _redis;
 
         [FunctionName("Products")]
         public async Task Run(
@@ -80,6 +80,7 @@ namespace DataCopilot
             
 
             //Update Redis Cache with embeddings
+            _redis = new Redis(log);
             await _redis.CacheEmbeddings(embedding, log);
 
             log.LogInformation("Cached embeddings for product: " + product.name);

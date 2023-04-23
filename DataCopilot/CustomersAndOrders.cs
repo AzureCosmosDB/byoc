@@ -17,7 +17,7 @@ namespace DataCopilot
 
         private readonly OpenAI _openAI = new OpenAI();
 
-        private static Redis _redis = new Redis();
+        private static Redis _redis;
 
 
         [FunctionName("CustomersAndOrders")]
@@ -98,6 +98,8 @@ namespace DataCopilot
             await output.AddAsync(embedding);
 
             //Update Redis Cache with embeddings
+             _redis = new Redis(log);
+            
             await _redis.CacheEmbeddings(embedding, log);
 
             log.LogInformation("Cached embeddings for customer : " + customer.firstName + " " + customer.lastName);
