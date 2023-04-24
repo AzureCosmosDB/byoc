@@ -13,6 +13,8 @@ using Azure.AI.OpenAI;
 using StackExchange.Redis;
 using DataCopilot.Utils;
 using DataCopilot.Models;
+using System.Net;
+using Microsoft.AspNetCore.Mvc;
 
 namespace DataCopilot
 {
@@ -23,23 +25,22 @@ namespace DataCopilot
         private static CosmosDB cosmosConnection = new CosmosDB(Environment.GetEnvironmentVariable("CosmosDBConnection"));
 
         [FunctionName("Chat")]
-        public async Task Run([HttpTrigger(
+        public async Task<IActionResult> Run([HttpTrigger(
             AuthorizationLevel.Function, "get", "post", Route = null)]
             HttpRequest req,
             ILogger log)
         {
             string? _errorMessage;
-
-            //IQueryable<BillDocument> queryResults = Array.Empty<BillDocument>().AsQueryable();
             
             QueryModel query = new();
             //ChatRequest? chatRequest;
             ChatCompletionsOptions? chatRequest = null;
+            ChatCompletions? chatResponse = null;
 
             int tokensUsed;
 
             if (req == null)
-                return;
+                return new NullResult();
 
             _redis = new Redis(log);
             // query = get_param(req, 'query')
@@ -105,7 +106,7 @@ namespace DataCopilot
                         //queryResults = resultList.AsQueryable();
 
                         chatRequest = _openAI.GetChatRequest(query.QueryText, resultList.Select(bd => bd), log); 
-                        var chatResponse = await _openAI.GetChatResponse(chatRequest, log);
+                        chatResponse = await _openAI.GetChatResponse(chatRequest, log);
                         if (chatResponse?.Choices?[0]?.Message is { } m)
                         {
                             chatRequest.Messages.Add(m);
@@ -123,7 +124,7 @@ namespace DataCopilot
                 {
                     chatRequest.Messages.Add(new ChatMessage (ChatRole.User, query.QueryText));
 
-                    var chatResponse = await _openAI.GetChatResponse(chatRequest, log);
+                    chatResponse = await _openAI.GetChatResponse(chatRequest, log);
                     if (chatResponse?.Choices?[0]?.Message is { } m)
                     {
                         chatRequest.Messages.Add(m);
@@ -132,15 +133,29 @@ namespace DataCopilot
                         query.QueryText = "";
                     }
                 }
+
+                var response = req.HttpContext.Response;
+
+                response.StatusCode = (int) HttpStatusCode.OK;
+                response.ContentType = "text/json; charset=utf-8";
+
+                if (chatResponse != null)
+                    await response.WriteAsync(chatResponse?.Choices?[0]?.Message.Content);
+
             }
             catch (Exception e)
             {
                 _errorMessage = e.ToString();
                 log.LogError(_errorMessage);
             }
-            finally
-            {
-            }
+
+            return new NullResult();
         }
+
+    }
+    public class NullResult : IActionResult
+    {
+        public Task ExecuteResultAsync(ActionContext context) 
+        => Task.FromResult(Task.CompletedTask);
     }
 }

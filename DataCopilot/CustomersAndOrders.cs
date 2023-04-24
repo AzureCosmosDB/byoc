@@ -99,7 +99,8 @@ namespace DataCopilot
             await output.AddAsync(embedding);
 
             //Update Redis Cache with embeddings
-             _redis = new Redis(log);
+            if (_redis == null)
+                _redis = new Redis(log);
             
             await _redis.CacheEmbeddings(embedding, log);
 
@@ -137,8 +138,10 @@ namespace DataCopilot
             //Insert embeddings into Cosmos DB
             await output.AddAsync(embedding);
 
-
             //Update Redis Cache with embeddings
+            if (_redis == null)
+                _redis = new Redis(log);
+
             await _redis.CacheEmbeddings(embedding, log);
 
             log.LogInformation("Cached embeddings for Sales Order Id: " + salesOrder.id);

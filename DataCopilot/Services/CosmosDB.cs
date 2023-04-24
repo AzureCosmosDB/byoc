@@ -49,59 +49,6 @@ public class CosmosDB
             }
         }
     }    
-    
-    public async Task<DocModel> GetDocumentByQuery(EmbeddingType embeddingType, string query)
-    {
-        if (embeddingType == null || query == null)
-            return null;
-        var container = _cosmosClient.GetContainer("CosmicWorksDB", (embeddingType == EmbeddingType.product) ? "product" : "customer");
-
-        //TODO: make generic
-        if (embeddingType == EmbeddingType.product)
-        {
-            using FeedIterator<Product> feedIterator = container.GetItemQueryIterator<Product>("SELECT * FROM c " + query);
-            if (feedIterator != null && feedIterator.HasMoreResults)
-            {
-                var response = await feedIterator.ReadNextAsync();
-                return response.First();
-            }
-            else
-                return null;
-        }
-        else if  (embeddingType == EmbeddingType.customer)
-        {
-            using FeedIterator<Customer> feedIterator = container.GetItemQueryIterator<Customer>("SELECT * FROM c " + query);
-            if (feedIterator != null && feedIterator.HasMoreResults)
-            {
-                var response = await feedIterator.ReadNextAsync();
-                return response.First();
-            }
-            else
-                return null;
-        }
-        else if  (embeddingType == EmbeddingType.order)
-        {
-            using FeedIterator<SalesOrder> feedIterator = container.GetItemQueryIterator<SalesOrder>("SELECT * FROM c " + query);
-            if (feedIterator != null && feedIterator.HasMoreResults)
-            {
-                var response = await feedIterator.ReadNextAsync();
-                return response.First();
-            }
-            else
-                return null;
-        }
-        return null;
-    }
-
-    public async Task WriteItem(DocModel doc, string collectionName, string partitionKey)
-    {
-        var container = _cosmosClient.GetContainer("CosmicWorksDB", collectionName);
-        var response = await container.CreateItemAsync(doc, new PartitionKey(partitionKey));
-        if ((int)response.StatusCode < 200 || (int)response.StatusCode >= 400)
-        {
-            throw new InvalidOperationException($"Failed to write an item for id '{doc.id}' - status code '{response.StatusCode}");
-        }
-    }
 
     public async Task<string> GetDocumentString(EmbeddingType embeddingType, string query)
     {
