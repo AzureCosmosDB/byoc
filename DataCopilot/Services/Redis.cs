@@ -65,29 +65,29 @@ namespace DataCopilot.Services
 
             try
             {
-                log.LogInformation("Checking if Redis index exists...");
-                var db = _connectionMultiplexer.GetDatabase();
+                //log.LogInformation("Checking if Redis index exists...");
+                // var db = _connectionMultiplexer.GetDatabase();
 
-                RedisResult index = null;
-                try
-                {
-                    index = await db.ExecuteAsync("FT.INFO", "embeddingIndex");
-                }
-                catch (StackExchange.Redis.RedisServerException redisX)
-                {
-                    log.LogInformation("Exception while checking embedding index:" + redisX.Message);
-                }
-                if (index != null)
-                {
-                    log.LogInformation("Redis index for embeddings already exists. Skipping...");
-                    return;
-                }
+                // RedisResult index = null;
+                // try
+                // {
+                //     index = await db.ExecuteAsync("FT.INFO", "embeddingIndex");
+                // }
+                // catch (StackExchange.Redis.RedisServerException redisX)
+                // {
+                //     log.LogInformation("Exception while checking embedding index:" + redisX.Message);
+                // }
+                // if (index != null)
+                // {
+                //     log.LogInformation("Redis index for embeddings already exists. Skipping...");
+                //     return;
+                // }
                 
-                log.LogInformation("Creating Redis index...");
-                //var db = _connectionMultiplexer.GetDatabase();
-                var _ = await db.ExecuteAsync("FT.CREATE",
-                    "embeddingIndex", "SCHEMA", "vector", "VECTOR", "HNSW", "6", "TYPE", "FLOAT32", "DISTANCE_METRIC", "COSINE", "DIM", "1536");
-                log.LogInformation("Created Redis index for embeddings");
+                // log.LogInformation("Creating Redis index...");
+                // //var db = _connectionMultiplexer.GetDatabase();
+                // var _ = await db.ExecuteAsync("FT.CREATE",
+                //     "embeddingIndex", "SCHEMA", "vector", "VECTOR", "HNSW", "6", "TYPE", "FLOAT32", "DISTANCE_METRIC", "COSINE", "DIM", "1536");
+                // log.LogInformation("Created Redis index for embeddings");
             }
             catch (Exception e)
             {
@@ -109,6 +109,8 @@ namespace DataCopilot.Services
 
                 await db.HashSetAsync(emb.id, new[]{
                                                         new HashEntry("vector", mem.AsBytes()),
+                                                        new HashEntry("originalId", emb.originalId),
+                                                        new HashEntry("type", (int) emb.type)
                                                         //new HashEntry("data", document.data)
                                                     });
                 //return vector;

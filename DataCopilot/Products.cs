@@ -57,7 +57,8 @@ namespace DataCopilot
             
             Embedding embedding = new Embedding();
             embedding.id = Guid.NewGuid().ToString();
-            embedding.type = EmbeddingType.Product;
+            embedding.type = EmbeddingType.product;
+            embedding.originalId = product.id;
 
             try
             {

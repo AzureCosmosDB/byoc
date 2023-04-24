@@ -20,7 +20,7 @@ namespace DataCopilot
     {
         private readonly OpenAI _openAI = new OpenAI();
         private static Redis _redis;
-        private static CosmosConnection cosmosConnection = new CosmosConnection(Environment.GetEnvironmentVariable("CosmosDBConnection"));
+        private static CosmosDB cosmosConnection = new CosmosDB(Environment.GetEnvironmentVariable("CosmosDBConnection"));
 
         [FunctionName("Chat")]
         public async Task Run([HttpTrigger(
@@ -57,7 +57,7 @@ namespace DataCopilot
             {
                 if (chatRequest is null || query.ResetContext)
                 {
-                    var resultList = new List<DocModel>(query.ResultsToShow);
+                    var resultList = new List<string>(query.ResultsToShow);
                     tokensUsed = 0;
                     query.ResetContext = false;
                     _errorMessage = "";
@@ -90,16 +90,21 @@ namespace DataCopilot
 
                         for (var i = 0; i < count; i++)
                         {
-                            var id = (string)results[2 * i + 1];
+                            //var id = (string)results[2 * i + 1];
+                            var originalId = (string)((RedisResult[])results[2 * i + 1 + 1])[5];
+                            //var collectionName = ((EmbeddingType) ushort.Parse((string) ((RedisResult[]) results[2 * i + 1 + 1])[7])).AsText();
 
-                            var doc = await cosmosConnection.GetDocumentById(id);
+                            EmbeddingType embeddingType = (EmbeddingType) ushort.Parse((string) ((RedisResult[]) results[2 * i + 1 + 1])[7]);
 
-                            resultList.Add(doc);
+                            var doc = await cosmosConnection.GetDocumentString(embeddingType, "WHERE c.id=\"" + originalId + "\""); 
+
+                            if (doc != null)
+                                resultList.Add(doc);
                         }
 
                         //queryResults = resultList.AsQueryable();
 
-                        chatRequest = _openAI.GetChatRequest(query.QueryText, resultList.Select(bd => bd.ToString()), log); //TODO: return actual document payload
+                        chatRequest = _openAI.GetChatRequest(query.QueryText, resultList.Select(bd => bd), log); 
                         var chatResponse = await _openAI.GetChatResponse(chatRequest, log);
                         if (chatResponse?.Choices?[0]?.Message is { } m)
                         {

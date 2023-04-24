@@ -49,7 +49,8 @@ public class OpenAI
     """
     Assistant is an intelligent chatbot designed to help users answer their questions related to the contents of their documents containing information on products, customers and sales orders in JSON format.
     Instructions:
-    - Only answer questions related to the documents provided below.
+    - Only answer questions related to the documents provided below,
+    - Don't reference any other product/customer/sales order data,
     - If you're unsure of an answer, you can say "I don't know" or "I'm not sure" and recommend users search themselves.
 
     Text of relevant documents:
@@ -59,7 +60,13 @@ public class OpenAI
     {
         //TODO: add context
         log.LogInformation($"Input: {prompt}");
-        ChatCompletionsOptions chatOptions = new ChatCompletionsOptions();
+        ChatCompletionsOptions chatOptions = new ChatCompletionsOptions()
+        {
+            Temperature = 0.5f,
+            NucleusSamplingFactor = 0.95f,
+            FrequencyPenalty = 0,
+            PresencePenalty = 0
+        };
 
         var content = new StringBuilder(SystemPromptStart);
         foreach (var c in context)
