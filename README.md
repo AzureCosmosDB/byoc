@@ -23,7 +23,10 @@ Optional components include:
 8.	Azure OpenAI with Embeddings API
 
 ## Deployment
-1. Clone the repo and install prerequisities (.NET SDK, Azure Functions SDK)
-2. Create embedding collection in yoru Cosmos DB database with /id as a shard key and minimal throughput
-3. Change the local.settings.json to reflect your subscription/services details (self-descriptive)
-4. Run/Debug and watch the embedding collection populated
+1. Clone the repo and install prerequisites (.NET SDK, Azure Functions SDK, Postman)
+    
+    a. Make sure all resources required are deployed in Azure subscription (e.g. Redis Enterprise, OpenAI with two models for embeddings and completions (text-ada-embeddings-002 and gpt-35-turbo))
+2. Create embedding collection in your Cosmos DB database with /id as a shard key and minimal throughput
+3. Change the local.settings.json to reflect your subscription/services details (self-descriptive, or get working local.settings.json from authors)
+4. Run/Debug and watch the embedding collection populated with all existing documents' embeddings and then adding new embeddings for every new/changed document
+5. Submit HTTP POST (for example via Postman) with the prompt query set to the question to ask of ChatGPT (e.g. http://localhost:7071/api/Chat?prompt=what products do you have?) and see the response in the console.

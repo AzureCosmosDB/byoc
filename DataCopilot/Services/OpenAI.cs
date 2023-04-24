@@ -47,7 +47,7 @@ public class OpenAI
 
     private const string SystemPromptStart =
     """
-    Assistant is an intelligent chatbot designed to help users answer their document-related questions.
+    Assistant is an intelligent chatbot designed to help users answer their questions related to the contents of their documents containing information on products, customers and sales orders in JSON format.
     Instructions:
     - Only answer questions related to the documents provided below.
     - If you're unsure of an answer, you can say "I don't know" or "I'm not sure" and recommend users search themselves.
