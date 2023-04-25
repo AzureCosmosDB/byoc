@@ -53,7 +53,7 @@ namespace DataCopilot
             embedding.id = Guid.NewGuid().ToString();
             embedding.type = EmbeddingType.product;
             embedding.originalId = product.id;
-            embedding.partitionKey = "categoryId";
+            embedding.partitionKey = product.categoryId;
 
             try
             {

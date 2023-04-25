@@ -18,7 +18,7 @@ namespace DataCopilot.Services
         public Redis(ILogger log)
         {
             this.log = log;
-            CreateRedisIndex();
+            //CreateRedisIndex();  // TODO: uncomment in regular flow
         }
 
         public IDatabase GetDatabase()

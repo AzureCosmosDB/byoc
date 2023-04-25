@@ -68,7 +68,7 @@ namespace DataCopilot
             embedding.id = Guid.NewGuid().ToString();
             embedding.type = EmbeddingType.customer;
             embedding.originalId = customer.id;
-            embedding.partitionKey = "id";
+            embedding.partitionKey = customer.id;
 
             try
             {
@@ -108,7 +108,7 @@ namespace DataCopilot
             embedding.id = Guid.NewGuid().ToString();
             embedding.type = EmbeddingType.order;
             embedding.originalId = salesOrder.id;
-            embedding.partitionKey = "id";
+            embedding.partitionKey = salesOrder.id;
 
             try
             {

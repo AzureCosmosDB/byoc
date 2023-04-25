@@ -22,16 +22,21 @@ public class CosmosDB
         return jsonDoc.RootElement.GetProperty("Documents")[0].GetProperty("$1").GetInt32();
     }
 
-    public async Task<DocModel> GetDocumentById(string collectionName, string id, string partitionKey)
+    public async Task<string> GetDocumentById(EmbeddingType embeddingType, string id, string partitionKey)
     {
-        var container = _cosmosClient.GetContainer("CosmicWorksDB", collectionName);
-        var response = await container.ReadItemAsync<DocModel>(id, new PartitionKey(id));
+        var container =_cosmosClient.GetContainer("CosmicWorksDB", (embeddingType == EmbeddingType.product) ? "product" : "customer");
+        var response = await container.ReadItemStreamAsync(id, new PartitionKey(partitionKey));
         if ((int)response.StatusCode < 200 || (int)response.StatusCode >= 400)
         {
             throw new InvalidOperationException($"Failed to retrieve an item for id '{id}' - status code '{response.StatusCode}");
         }
 
-        return response.Resource;
+        string content = null;
+        
+        using (StreamReader sr = new StreamReader(response.Content))
+        content = await sr.ReadToEndAsync();
+
+        return content;
     }
 
     public async IAsyncEnumerable<DocModel> GetAllDocuments(string collectionName)

@@ -89,9 +89,11 @@ namespace DataCopilot
                             var originalId = (string)((RedisResult[])results[2 * i + 1 + 1])[5];
                             //var collectionName = ((EmbeddingType) ushort.Parse((string) ((RedisResult[]) results[2 * i + 1 + 1])[7])).AsText();
 
-                            EmbeddingType embeddingType = (EmbeddingType) ushort.Parse((string) ((RedisResult[]) results[2 * i + 1 + 1])[7]);
+                            string pk = (string)((RedisResult[])results[2 * i + 1 + 1])[7];
 
-                            var doc = await _cosmosDB.GetDocumentString(embeddingType, "WHERE c.id=\"" + originalId + "\""); 
+                            EmbeddingType embeddingType = (EmbeddingType) ushort.Parse((string) ((RedisResult[]) results[2 * i + 1 + 1])[9]);
+
+                            var doc = await _cosmosDB.GetDocumentById(embeddingType, originalId, pk); 
 
                             if (doc != null)
                                 resultList.Add(doc);
