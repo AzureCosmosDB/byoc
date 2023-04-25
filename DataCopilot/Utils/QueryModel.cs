@@ -9,7 +9,7 @@ namespace DataCopilot.Utils
         public string QueryText { get; set; } = "";
 
         [Required, Range(1, 5)]
-        public int ResultsToShow { get; set; } = 3;
+        public int ResultsToShow { get; set; } = 30;
 
         public bool ResetContext { get; set; } = true;
     }

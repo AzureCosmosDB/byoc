@@ -1,11 +1,4 @@
-﻿using Azure;
-using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
-
-namespace DataCopilot.Models
+﻿namespace DataCopilot.Models
 {
     public class Product : DocModel
     {

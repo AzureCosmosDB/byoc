@@ -1,10 +1,4 @@
-﻿using Azure;
-using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
-using System.ComponentModel;
+﻿using System.ComponentModel;
 
 namespace DataCopilot.Models
 {
@@ -13,6 +7,7 @@ namespace DataCopilot.Models
         public string id { get; set; }
         public EmbeddingType type { get; set; }
         public string originalId { get; set; }
+        public string partitionKey { get; set; }
         public float[] embeddings { get; set; }
     }
 

@@ -1,14 +1,8 @@
 using DataCopilot.Services;
 using Microsoft.AspNetCore.Http;
-using Microsoft.Azure.Cosmos;
 using Microsoft.Azure.WebJobs;
 using Microsoft.Azure.WebJobs.Extensions.Http;
 using Microsoft.Extensions.Logging;
-using Newtonsoft.Json.Linq;
-using System;
-using System.Configuration;
-using System.Text.Json;
-using System.Threading.Tasks;
 using Azure.AI.OpenAI;
 using StackExchange.Redis;
 using DataCopilot.Utils;

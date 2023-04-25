@@ -1,6 +1,4 @@
 ﻿using Microsoft.Azure.Cosmos;
-using Microsoft.Extensions.Configuration;
-using System.Reflection.Metadata;
 using System.Text.Json;
 using DataCopilot.Models;
 

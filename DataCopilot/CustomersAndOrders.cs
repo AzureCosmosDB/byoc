@@ -1,13 +1,7 @@
-using System;
-using System.IO;
-using System.Threading.Tasks;
 using Microsoft.Azure.WebJobs;
-using System.Collections.Generic;
 using Microsoft.Extensions.Logging;
 using Newtonsoft.Json.Linq;
 using DataCopilot.Models;
-using Microsoft.Extensions.Configuration;
-using Microsoft.Azure.Cosmos;
 using DataCopilot.Services;
 
 namespace DataCopilot
