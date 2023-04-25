@@ -8,7 +8,9 @@ namespace DataCopilot.Services
     // Redis Cache for Embeddings
     public class Redis : IDisposable
     {
-       private static readonly ConnectionMultiplexer _connectionMultiplexer = ConnectionMultiplexer.Connect(Environment.GetEnvironmentVariable("RedisConnection"));
+        private static readonly ConnectionMultiplexer _connectionMultiplexer = ConnectionMultiplexer.Connect(Environment.GetEnvironmentVariable("RedisConnection"));
+        private static CosmosDB _cosmosDB = new CosmosDB(Environment.GetEnvironmentVariable("CosmosDBConnection"));
+
         ILogger log;
         string? _errorMessage;
         List<string> _statusMessages = new();
@@ -59,7 +61,7 @@ namespace DataCopilot.Services
 
                 var _ = await db.ExecuteAsync("FT.CREATE",
                     "embeddingIndex", "SCHEMA", "vector", "VECTOR", "HNSW", "6", "TYPE", "FLOAT32", "DISTANCE_METRIC", "COSINE", "DIM", "1536");
-                    
+
                 log.LogInformation("Created Redis index for embeddings");
             }
             catch (Exception e)
@@ -83,7 +85,8 @@ namespace DataCopilot.Services
                 await db.HashSetAsync(emb.id, new[]{
                                                         new HashEntry("vector", mem.AsBytes()),
                                                         new HashEntry("originalId", emb.originalId),
-                                                        new HashEntry("type", (int) emb.type)
+                                                        new HashEntry("type", (int) emb.type),
+                                                        new HashEntry("pk", emb.partitionKey)
                                                         //new HashEntry("data", document.data)
                                                     });
                 //return vector;
@@ -93,32 +96,33 @@ namespace DataCopilot.Services
                 _errorMessage = e.ToString();
             }
         }
-        /*
-        async Task RestoreRedisStateFromCosmosDB()
+        
+        async Task RestoreRedisStateFromCosmosDB(ILogger log)
         {
             ClearState();
 
             try
             {
-                _statusMessages.Add("Deleting all redis keys...");
+                log.LogInformation("Deleting all Redis keys...");
                 var db = _connectionMultiplexer.GetDatabase();
                 var _ = await db.ExecuteAsync("FLUSHDB");
-                _statusMessages.Add("Done.");
+                log.LogInformation("Deleted all Redis keys.");
 
-                _statusMessages.Add("Processing documents...");
-                await foreach (var doc in cosmosConnection.GetAllDocuments())
-                {
-                    await BillDocument.CacheDocumentVector(openAIClient, db, doc);
-                    _statusMessages.Add($"\tCached document with id '{doc.id}'");
-                }
-                _statusMessages.Add("Done.");
+                // Populate cache with Cosmos DB collections' data
+                //log.LogInformation("Repopulating cache...");
+                // await foreach (var doc in _cosmosDB.GetAllDocuments()))
+                // {
+                //     await BillDocument.CacheDocumentVector(openAIClient, db, doc);
+                //     _statusMessages.Add($"\tCached document with id '{doc.id}'");
+                // }
+                //log.LogInformation("Repopulated cache.");
             }
             catch (Exception e)
             {
                 _errorMessage = e.ToString();
             }
         }
-*/
+
         public void Dispose()
         {
             _connectionMultiplexer.Dispose();

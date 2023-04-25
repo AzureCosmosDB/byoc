@@ -8,7 +8,6 @@ namespace DataCopilot
 {
     public class Products
     {
-
         private readonly OpenAI _openAI = new OpenAI();
 
         private static Redis _redis;
@@ -50,18 +49,16 @@ namespace DataCopilot
             string sProduct = JObject.FromObject(product).ToString();
             //int len = sProduct.Length;
 
-            
             Embedding embedding = new Embedding();
             embedding.id = Guid.NewGuid().ToString();
             embedding.type = EmbeddingType.product;
             embedding.originalId = product.id;
+            embedding.partitionKey = "categoryId";
 
             try
             {
-
                 //Get the embeddings from OpenAI
                 var listEmbeddings = await _openAI.GetEmbeddingsAsync(sProduct, log);
-
 
                 //Add to embeddings object
                 embedding.embeddings = (float[])listEmbeddings;
@@ -71,10 +68,8 @@ namespace DataCopilot
                 log.LogError("Exception while generating embeddings for [" + product.name + "]: " + x.Message);
             }
 
-
             //Insert embeddings into Cosmos DB
             await output.AddAsync(embedding);
-            
 
             //Update Redis Cache with embeddings
             _redis = new Redis(log);

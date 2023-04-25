@@ -16,7 +16,7 @@ namespace DataCopilot
     {
         private readonly OpenAI _openAI = new OpenAI();
         private static Redis _redis;
-        private static CosmosDB cosmosConnection = new CosmosDB(Environment.GetEnvironmentVariable("CosmosDBConnection"));
+        private static CosmosDB _cosmosDB = new CosmosDB(Environment.GetEnvironmentVariable("CosmosDBConnection"));
 
         [FunctionName("Chat")]
         public async Task<IActionResult> Run([HttpTrigger(
@@ -91,7 +91,7 @@ namespace DataCopilot
 
                             EmbeddingType embeddingType = (EmbeddingType) ushort.Parse((string) ((RedisResult[]) results[2 * i + 1 + 1])[7]);
 
-                            var doc = await cosmosConnection.GetDocumentString(embeddingType, "WHERE c.id=\"" + originalId + "\""); 
+                            var doc = await _cosmosDB.GetDocumentString(embeddingType, "WHERE c.id=\"" + originalId + "\""); 
 
                             if (doc != null)
                                 resultList.Add(doc);

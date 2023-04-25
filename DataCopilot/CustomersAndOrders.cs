@@ -8,11 +8,8 @@ namespace DataCopilot
 {
     public class CustomersAndOrders
     {
-
         private readonly OpenAI _openAI = new OpenAI();
-
         private static Redis _redis;
-
 
         [FunctionName("CustomersAndOrders")]
         public async Task Run(
@@ -61,19 +58,17 @@ namespace DataCopilot
             }
         }
 
-
         public async Task GenerateCustomerEmbeddings(Customer customer, IAsyncCollector<Embedding> output, ILogger log)
         {
-
             //Serialize the customer object to send to OpenAI
             string sCustomer = JObject.FromObject(customer).ToString(Newtonsoft.Json.Formatting.None);
             //int len = sCustomer.Length;
-            
             
             Embedding embedding = new Embedding();
             embedding.id = Guid.NewGuid().ToString();
             embedding.type = EmbeddingType.customer;
             embedding.originalId = customer.id;
+            embedding.partitionKey = "id";
 
             try
             {
@@ -113,6 +108,7 @@ namespace DataCopilot
             embedding.id = Guid.NewGuid().ToString();
             embedding.type = EmbeddingType.order;
             embedding.originalId = salesOrder.id;
+            embedding.partitionKey = "id";
 
             try
             {
