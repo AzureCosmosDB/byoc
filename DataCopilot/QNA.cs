@@ -83,23 +83,41 @@ namespace DataCopilot
                             throw new NotSupportedException($"Unexpected entries is Redis result, '{results.Length}' results for count of '{count}'");
                         }
 
+                        string originalId = null, pk = null;
+                        EmbeddingType embeddingType = EmbeddingType.unknown;
+
                         for (var i = 0; i < count; i++)
                         {
-                            //var id = (string)results[2 * i + 1];
-                            var originalId = (string)((RedisResult[])results[2 * i + 1 + 1])[5];
-                            //var collectionName = ((EmbeddingType) ushort.Parse((string) ((RedisResult[]) results[2 * i + 1 + 1])[7])).AsText();
+                            //fetch the RedisResult
+                            RedisResult[] result = (RedisResult[])results[2 * i + 1 + 1];
 
-                            string pk = (string)((RedisResult[])results[2 * i + 1 + 1])[7];
+                            if (result == null)
+                                continue;
 
-                            EmbeddingType embeddingType = (EmbeddingType) ushort.Parse((string) ((RedisResult[]) results[2 * i + 1 + 1])[9]);
+                            for (int j = 0; j < result.Length; j += 2)
+                            {
+                                var key = (string) result[j];
+                                switch (key)
+                                {
+                                    case "pk": 
+                                        pk = (string) result[j+1];
+                                        break;
+                                
+                                    case "originalId":
+                                        originalId = (string) result[j+1];
+                                        break;                                    
+                                        
+                                    case "type":
+                                        embeddingType = (EmbeddingType) ushort.Parse((string)result[j+1]);
+                                        break;
+                                }    
+                            }
 
                             var doc = await _cosmosDB.GetDocumentById(embeddingType, originalId, pk); 
 
                             if (doc != null)
                                 resultList.Add(doc);
                         }
-
-                        //queryResults = resultList.AsQueryable();
 
                         chatRequest = _openAI.GetChatRequest(query.QueryText, resultList.Select(bd => bd), log); 
                         chatResponse = await _openAI.GetChatResponse(chatRequest, log);
