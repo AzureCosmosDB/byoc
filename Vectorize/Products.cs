@@ -1,10 +1,10 @@
 using Microsoft.Azure.WebJobs;
 using Microsoft.Extensions.Logging;
 using Newtonsoft.Json.Linq;
-using Vectorize.Models;
-using Vectorize.Services;
+using DataCopilot.Vectorize.Models;
+using DataCopilot.Vectorize.Services;
 
-namespace Vectorize
+namespace DataCopilot.Vectorize
 {
     public class Products
     {

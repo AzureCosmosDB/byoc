@@ -1,6 +1,6 @@
 ﻿using System.ComponentModel.DataAnnotations;
 
-namespace Vectorize.Utils
+namespace DataCopilot.Vectorize.Utils
 {
     public class QueryModel
     {

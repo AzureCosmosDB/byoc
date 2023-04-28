@@ -1,7 +1,7 @@
 ﻿using System.Buffers;
 using System.Runtime.InteropServices;
 
-namespace Vectorize.Utils;
+namespace DataCopilot.Vectorize.Utils;
 
 /// <summary>
 /// Efficiently treat an array of float as an array of bytes.

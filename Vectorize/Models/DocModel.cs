@@ -1,6 +1,6 @@
 using Newtonsoft.Json;
 
-namespace Vectorize.Models
+namespace DataCopilot.Vectorize.Models
 {
     public abstract class DocModel
     {

@@ -1,8 +1,8 @@
 ﻿using Microsoft.Azure.Cosmos;
 using System.Text.Json;
-using Vectorize.Models;
+using DataCopilot.Vectorize.Models;
 
-namespace Vectorize.Services;
+namespace DataCopilot.Vectorize.Services;
 
 public class CosmosDB
 {

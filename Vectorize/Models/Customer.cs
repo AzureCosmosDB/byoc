@@ -1,4 +1,4 @@
-﻿namespace Vectorize.Models
+﻿namespace DataCopilot.Vectorize.Models
 {
     public class Customer : DocModel
     {

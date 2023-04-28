@@ -1,10 +1,10 @@
 ﻿using Microsoft.Extensions.Logging;
 using StackExchange.Redis;
-using Vectorize.Utils;
-using Vectorize.Models;
+using DataCopilot.Vectorize.Utils;
+using DataCopilot.Vectorize.Models;
 using Microsoft.Azure.Cosmos;
 
-namespace Vectorize.Services
+namespace DataCopilot.Vectorize.Services
 {
     // Redis Cache for Embeddings
     public class Redis : IDisposable
@@ -18,8 +18,7 @@ namespace Vectorize.Services
         public Redis(ILogger log)
         {
             this.log = log;
-            //CreateRedisIndex();
-            RestoreRedisStateFromCosmosDB();
+            CreateRedisIndex();
         }
 
         public IDatabase GetDatabase()
@@ -62,8 +61,11 @@ namespace Vectorize.Services
 
                 var _ = await db.ExecuteAsync("FT.CREATE",
                     "embeddingIndex", "SCHEMA", "vector", "VECTOR", "HNSW", "6", "TYPE", "FLOAT32", "DISTANCE_METRIC", "COSINE", "DIM", "1536");
+                log.LogInformation("Created Redis index for embeddings. Repopulating from Cosmos DB...");
 
-                log.LogInformation("Created Redis index for embeddings");
+                //Repopulate from Cosmos DB if there are any embeddings there
+                await RestoreRedisStateFromCosmosDB(log);
+                log.LogInformation("Repopulated Redis index from Cosmos DB embeddings");
             }
             catch (Exception e)
             {
@@ -97,24 +99,24 @@ namespace Vectorize.Services
             }
         }
         
-        async Task RestoreRedisStateFromCosmosDB()
+        async Task RestoreRedisStateFromCosmosDB(ILogger log)
         {
             ClearState();
 
             try
             {
-                _statusMessages.Add("Deleting all redis keys...");
+                log.LogInformation("Deleting all redis keys...");
                 var db = _connectionMultiplexer.GetDatabase();
                 var _ = await db.ExecuteAsync("FLUSHDB");
-                _statusMessages.Add("Done.");
+                log.LogInformation("Done.");
 
-                _statusMessages.Add("Processing documents...");
+                log.LogInformation("Processing documents...");
                 await foreach (var doc in _cosmosDB.GetAllEmbeddings())
                 {
                     await CacheEmbeddings(doc, log);
-                    _statusMessages.Add($"\tCached embedding for document with id '{doc.originalId}'");
+                    log.LogInformation($"\tCached embedding for document with id '{doc.originalId}'");
                 }
-                _statusMessages.Add("Done.");
+                log.LogInformation("Done.");
             }
             catch (Exception e)
             {
@@ -126,6 +128,5 @@ namespace Vectorize.Services
         {
             _connectionMultiplexer.Dispose();
         }
-
     }
 }

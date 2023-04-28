@@ -1,6 +1,6 @@
 ﻿using System.ComponentModel;
 
-namespace Vectorize.Models
+namespace DataCopilot.Vectorize.Models
 {
     public class Embedding : DocModel
     {

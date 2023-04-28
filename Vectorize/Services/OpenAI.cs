@@ -3,7 +3,7 @@ using Azure.AI.OpenAI;
 using Microsoft.Extensions.Logging;
 using System.Text;
 
-namespace Vectorize.Services;
+namespace DataCopilot.Vectorize.Services;
 
 public class OpenAI
 {
