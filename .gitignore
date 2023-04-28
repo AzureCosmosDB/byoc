@@ -355,3 +355,5 @@ MigrationBackup/
 __azurite_db_blob__.json
 __azurite_db_blob_extent__.json
 __blobstorage__/7af3d269-0e18-4d4d-8058-ace79fb798d5
+/Search/appsettings.Development.json
+/Vectorize/local.settings.json
