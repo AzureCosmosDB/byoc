@@ -2,6 +2,7 @@
 using StackExchange.Redis;
 using Vectorize.Utils;
 using Vectorize.Models;
+using Microsoft.Azure.Cosmos;
 
 namespace Vectorize.Services
 {
@@ -12,11 +13,13 @@ namespace Vectorize.Services
         ILogger log;
         string? _errorMessage;
         List<string> _statusMessages = new();
+        CosmosDB _cosmosDB = new CosmosDB(Environment.GetEnvironmentVariable("CosmosDBConnection"));
 
         public Redis(ILogger log)
         {
             this.log = log;
-            CreateRedisIndex();
+            //CreateRedisIndex();
+            RestoreRedisStateFromCosmosDB();
         }
 
         public IDatabase GetDatabase()
@@ -93,7 +96,7 @@ namespace Vectorize.Services
                 _errorMessage = e.ToString();
             }
         }
-        /*
+        
         async Task RestoreRedisStateFromCosmosDB()
         {
             ClearState();
@@ -106,10 +109,10 @@ namespace Vectorize.Services
                 _statusMessages.Add("Done.");
 
                 _statusMessages.Add("Processing documents...");
-                await foreach (var doc in cosmosConnection.GetAllDocuments())
+                await foreach (var doc in _cosmosDB.GetAllEmbeddings())
                 {
-                    await BillDocument.CacheDocumentVector(openAIClient, db, doc);
-                    _statusMessages.Add($"\tCached document with id '{doc.id}'");
+                    await CacheEmbeddings(doc, log);
+                    _statusMessages.Add($"\tCached embedding for document with id '{doc.originalId}'");
                 }
                 _statusMessages.Add("Done.");
             }
@@ -118,7 +121,7 @@ namespace Vectorize.Services
                 _errorMessage = e.ToString();
             }
         }
-*/
+
         public void Dispose()
         {
             _connectionMultiplexer.Dispose();

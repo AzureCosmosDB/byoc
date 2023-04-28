@@ -24,10 +24,9 @@ public class CosmosDB
 
     public async Task<string> GetDocumentById(EmbeddingType embeddingType, string id, string partitionKey)
     {
-
         //The second part of this line is critical because we have both customer and order in the same container.
         //That second part says that if not product, then it must be customer container
-        var container = _cosmosClient.GetContainer("CosmicWorksDB", (embeddingType == EmbeddingType.product) ? "product" : "customer");
+        var container = _cosmosClient.GetContainer("CosmicWorksDB", embeddingType == EmbeddingType.product ? "product" : ((embeddingType == EmbeddingType.customer || embeddingType == EmbeddingType.order) ? "customer" : "embedding"));
         var response = await container.ReadItemStreamAsync(id, new PartitionKey(partitionKey));
         if ((int)response.StatusCode < 200 || (int)response.StatusCode >= 400)
         {
@@ -42,10 +41,27 @@ public class CosmosDB
         return content;
     }
 
-    public async IAsyncEnumerable<DocModel> GetAllDocuments(string collectionName)
+    // public async IAsyncEnumerable<DocModel> GetAllDocuments(string collectionName)
+    // {
+    //     var container = _cosmosClient.GetContainer("CosmicWorksDB", collectionName);
+    //     using var feedIterator = container.GetItemQueryIterator<DocModel>("SELECT * FROM c");
+    //     while (feedIterator.HasMoreResults)
+    //     {
+    //         var response = await feedIterator.ReadNextAsync();
+    //         foreach (var item in response)
+    //         {
+    //             yield return item;
+    //         }
+    //     }
+    // }
+
+
+    public async IAsyncEnumerable<Embedding> GetAllEmbeddings()
     {
-        var container = _cosmosClient.GetContainer("CosmicWorksDB", collectionName);
-        using var feedIterator = container.GetItemQueryIterator<DocModel>("SELECT * FROM c");
+        var container = _cosmosClient.GetContainer("CosmicWorksDB", "embedding");
+        // Read items satisfying the query from container
+        using var feedIterator = container.GetItemQueryIterator<Embedding>("SELECT * FROM c");
+
         while (feedIterator.HasMoreResults)
         {
             var response = await feedIterator.ReadNextAsync();
@@ -58,10 +74,10 @@ public class CosmosDB
 
     public async Task<string> GetDocumentString(EmbeddingType embeddingType, string query)
     {
-        if (embeddingType == null || query == null)
+        if (query == null)
             return null;
-        var container = _cosmosClient.GetContainer("CosmicWorksDB", embeddingType == EmbeddingType.product ? "product" : "customer");
-        // Read existing item from container
+        var container = _cosmosClient.GetContainer("CosmicWorksDB", embeddingType == EmbeddingType.product ? "product" : ((embeddingType == EmbeddingType.customer || embeddingType == EmbeddingType.order) ? "customer" : "embedding"));
+        // Read first item satisfying the query from container
         using FeedIterator feedIterator = container.GetItemQueryStreamIterator("SELECT * FROM c " + query);
 
         string content = null;

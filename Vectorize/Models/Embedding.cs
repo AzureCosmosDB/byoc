@@ -20,7 +20,9 @@ namespace Vectorize.Models
         [Description("Customer")]
         customer = 2,
         [Description("Order")]
-        order = 3
+        order = 3,
+        [Description("Embedding")]
+        embedding = 4
     }
 
     public static class EnumerationExtensions
