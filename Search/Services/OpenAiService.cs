@@ -1,6 +1,8 @@
 ﻿using Azure;
 using Azure.AI.OpenAI;
+using DataCopilot.Search.Components;
 using DataCopilot.Search.Models;
+using System.Text.RegularExpressions;
 
 namespace DataCopilot.Search.Services;
 
@@ -34,7 +36,7 @@ public class OpenAiService
 
     //System prompt to send with user prompts to instruct the model for summarization
     private readonly string _summarizePrompt = @"
-        Summarize this prompt in one or two words to use as a label in a button on a web page" + Environment.NewLine;
+        Summarize this prompt in one or two words to use as a label in a button on a web page. Output words only." + Environment.NewLine;
 
 
     /// <summary>
@@ -163,32 +165,35 @@ public class OpenAiService
     /// Sends the existing conversation to the OpenAI model and returns a two word summary.
     /// </summary>
     /// <param name="sessionId">Chat session identifier for the current conversation.</param>
-    /// <param name="conversation">Prompt conversation to send to the deployment.</param>
+    /// <param name="userPrompt">The first User Prompt and Completion to send to the deployment.</param>
     /// <returns>Summarization response from the OpenAI model deployment.</returns>
     public async Task<string> SummarizeAsync(string sessionId, string userPrompt)
     {
-        //Concatenate system prompt to instruct the model with user prompt
-        string prompt = _summarizePrompt + userPrompt;
+        
+        ChatMessage systemMessage = new ChatMessage(ChatRole.System, _summarizePrompt);
+        ChatMessage userMessage = new ChatMessage(ChatRole.User, userPrompt);
 
-        CompletionsOptions options = new()
+        ChatCompletionsOptions options = new()
         {
-            Prompts = {
-                prompt
+            Messages = {
+                systemMessage,
+                userMessage
             },
             User = sessionId,
             MaxTokens = 200,
             Temperature = 0.0f,
             NucleusSamplingFactor = 1.0f,
             FrequencyPenalty = 0,
-            PresencePenalty = 0,
-            ChoicesPerPrompt = 1
+            PresencePenalty = 0
         };
 
-        Response<Completions> completionsResponse = await _client.GetCompletionsAsync(_completionsDeployment, options);
+        Response<ChatCompletions> completionsResponse = await _client.GetChatCompletionsAsync(_completionsDeployment, options);
 
-        Completions completions = completionsResponse.Value;
+        ChatCompletions completions = completionsResponse.Value;
+        string output = completions.Choices[0].Message.Content;
 
-        string summary = completions.Choices[0].Text;
+        //Remove all non-alpha numeric characters (Turbo has a habit of putting things in quotes even when you tell it not to
+        string summary = Regex.Replace(output, @"[^a-zA-Z0-9\s]", "");
 
         return summary;
     }
