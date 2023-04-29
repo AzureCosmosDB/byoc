@@ -57,6 +57,9 @@ namespace DataCopilot.Vectorize.Services
                     return;
                 }
 
+                // If index doesn't exist remove all hashes
+                await ResetCache(log);
+
                 log.LogInformation("Creating Redis index...");
 
                 var _ = await db.ExecuteAsync("FT.CREATE",
@@ -96,10 +99,11 @@ namespace DataCopilot.Vectorize.Services
             catch (Exception e)
             {
                 _errorMessage = e.ToString();
+                log.LogError(_errorMessage);
             }
         }
         
-        async Task RestoreRedisStateFromCosmosDB(ILogger log)
+        async Task ResetCache(ILogger log)
         {
             ClearState();
 
@@ -109,7 +113,20 @@ namespace DataCopilot.Vectorize.Services
                 var db = _connectionMultiplexer.GetDatabase();
                 var _ = await db.ExecuteAsync("FLUSHDB");
                 log.LogInformation("Done.");
+            }
+            catch (Exception e)
+            {
+                _errorMessage = e.ToString();
+                log.LogError(_errorMessage);
+            }
+        }
 
+        async Task RestoreRedisStateFromCosmosDB(ILogger log)
+        {
+            ClearState();
+
+            try
+            {
                 log.LogInformation("Processing documents...");
                 await foreach (var doc in _cosmosDB.GetAllEmbeddings())
                 {
@@ -121,6 +138,7 @@ namespace DataCopilot.Vectorize.Services
             catch (Exception e)
             {
                 _errorMessage = e.ToString();
+                log.LogError(_errorMessage);
             }
         }
 

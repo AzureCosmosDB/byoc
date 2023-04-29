@@ -1,11 +1,36 @@
 {
     "version": "0.2.0",
     "configurations": [
-        {
-            "name": "Attach to .NET Functions",
-            "type": "coreclr",
-            "request": "attach",
-            "processId": "${command:azureFunctions.pickProcess}"
+      {
+        "type": "coreclr",
+        "request": "attach",
+        "name": "Backend",
+        "processId": "${command:azureFunctions.pickProcess}"
+      },
+      {
+        "type": "coreclr",
+        "request": "launch",
+        "name": "Frontend",
+        "preLaunchTask": "build",
+        "program": "${workspaceFolder}/Search/bin/Debug/net7.0/Search.dll",
+        "args": [],
+        "cwd": "${workspaceFolder}/Search",
+        "stopAtEntry": false,
+        "env": {
+            "ASPNETCORE_ENVIRONMENT": "Development",
+            "ASPNETCORE_URLS": "http://localhost:8100"                
+        }, 
+        "serverReadyAction": {
+            "action": "openExternally",
+            "pattern": "^\\s*Now listening on:\\s+(https?://\\S+)"
         }
+      }
+    ],
+    "compounds": [
+      {
+        "name": "Backend/Frontend",
+        "configurations": ["Backend", "Frontend"],
+        "stopAll": true
+      }
     ]
-}
+  }

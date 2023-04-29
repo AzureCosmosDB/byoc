@@ -222,6 +222,11 @@ public class CosmosDbService
             if ((int)response.StatusCode < 200 || (int)response.StatusCode >= 400)
                 _logger.LogError($"Failed to retrieve an item for id '{vectorSearch.documentId}' - status code '{response.StatusCode}");
 
+            if (response.Content == null)
+            {
+                _logger.LogInformation($"Null content received for document '{vectorSearch.documentId}' - status code '{response.StatusCode}");
+                continue;
+            }
 
             string item;
             using (StreamReader sr = new StreamReader(response.Content))
