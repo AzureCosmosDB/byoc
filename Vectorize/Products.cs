@@ -55,7 +55,8 @@ namespace DataCopilot.Vectorize
             embedding.id = Guid.NewGuid().ToString();
             embedding.type = EmbeddingType.product;
             embedding.originalId = product.id;
-
+            embedding.partitionKey = product.categoryId;
+            
             try
             {
 

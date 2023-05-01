@@ -91,7 +91,8 @@ namespace DataCopilot.Vectorize.Services
                 await db.HashSetAsync(emb.id, new[]{
                                                         new HashEntry("vector", mem.AsBytes()),
                                                         new HashEntry("originalId", emb.originalId),
-                                                        new HashEntry("type", (int) emb.type)
+                                                        new HashEntry("type", (int) emb.type),
+                                                        new HashEntry("pk", emb.partitionKey)
                                                         //new HashEntry("data", document.data)
                                                     });
                 //return vector;

@@ -67,14 +67,13 @@ namespace DataCopilot.Vectorize
 
             //Serialize the customer object to send to OpenAI
             string sCustomer = JObject.FromObject(customer).ToString(Newtonsoft.Json.Formatting.None);
-            //int len = sCustomer.Length;
-
 
             Embedding embedding = new Embedding();
             embedding.id = Guid.NewGuid().ToString();
             embedding.type = EmbeddingType.customer;
             embedding.originalId = customer.id;
-
+            embedding.partitionKey = customer.id;
+                          
             try
             {
                 //Get the embeddings from OpenAI
@@ -87,7 +86,6 @@ namespace DataCopilot.Vectorize
             {
                 log.LogError("Exception while generating embeddings for [" + customer.firstName + " " + customer.lastName + "]: " + x.Message);
             }
-
 
             //Insert embeddings into Cosmos DB
             await output.AddAsync(embedding);
@@ -113,7 +111,8 @@ namespace DataCopilot.Vectorize
             embedding.id = Guid.NewGuid().ToString();
             embedding.type = EmbeddingType.order;
             embedding.originalId = salesOrder.id;
-
+            embedding.partitionKey = salesOrder.id;
+            
             try
             {
 
