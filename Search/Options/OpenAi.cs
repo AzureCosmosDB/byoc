@@ -10,7 +10,7 @@ public record OpenAi
 
     public required string CompletionsDeployment { get; init; }
 
-    public required string MaxConversationTokens { get; init; }
+    public required string MaxConversationBytes { get; init; }
 
     public required ILogger Logger { get; init; }
 }

@@ -13,7 +13,7 @@ public class OpenAiService
 {
     private readonly string _embeddingsDeployment = string.Empty;
     private readonly string _completionsDeployment = string.Empty;
-    private readonly int _maxConversationTokens = default;
+    private readonly int _maxConversationBytes = default;
     private readonly ILogger _logger;
     private readonly OpenAIClient _client;
 
@@ -42,9 +42,9 @@ public class OpenAiService
     /// <summary>
     /// Gets the maximum number of tokens to limit chat conversation length.
     /// </summary>
-    public int MaxConversationTokens
+    public int MaxConversationBytes
     {
-        get => _maxConversationTokens;
+        get => _maxConversationBytes;
     }
 
     /// <summary>
@@ -54,23 +54,23 @@ public class OpenAiService
     /// <param name="key">Account key.</param>
     /// <param name="embeddingsDeployment">Name of the model deployment for generating embeddings.</param>
     /// <param name="completionsDeployment">Name of the model deployment for generating completions.</param>
-    /// <param name="maxConversationTokens">Maximum number of tokens to limit conversation history sent for a completion.</param>
+    /// <param name="maxConversationBytes">Maximum number of bytes to limit conversation history sent for a completion.</param>
     /// <param name="logger">Logger instance.</param>
-    /// <exception cref="ArgumentNullException">Thrown when endpoint, key, deploymentName, or maxTokens is either null or empty.</exception>
+    /// <exception cref="ArgumentNullException">Thrown when endpoint, key, deploymentName, or maxConversationBytes is either null or empty.</exception>
     /// <remarks>
     /// This constructor will validate credentials and create a HTTP client instance.
     /// </remarks>
-    public OpenAiService(string endpoint, string key, string embeddingsDeployment, string completionsDeployment, string maxConversationTokens, ILogger logger)
+    public OpenAiService(string endpoint, string key, string embeddingsDeployment, string completionsDeployment, string maxConversationBytes, ILogger logger)
     {
         ArgumentException.ThrowIfNullOrEmpty(endpoint);
         ArgumentException.ThrowIfNullOrEmpty(key);
         ArgumentException.ThrowIfNullOrEmpty(embeddingsDeployment);
         ArgumentException.ThrowIfNullOrEmpty(completionsDeployment);
-        ArgumentException.ThrowIfNullOrEmpty(maxConversationTokens);
+        ArgumentException.ThrowIfNullOrEmpty(maxConversationBytes);
 
         _embeddingsDeployment = embeddingsDeployment;
         _completionsDeployment = completionsDeployment;
-        _maxConversationTokens = int.TryParse(maxConversationTokens, out _maxConversationTokens) ? _maxConversationTokens : 3000;
+        _maxConversationBytes = int.TryParse(maxConversationBytes, out _maxConversationBytes) ? _maxConversationBytes : 2000;
         _logger = logger;
 
         _client = new(new Uri(endpoint), new AzureKeyCredential(key));
@@ -125,13 +125,10 @@ public class OpenAiService
     /// <returns>Response from the OpenAI model along with tokens for the prompt and response.</returns>
     public async Task<(string response, int promptTokens, int responseTokens)> GetChatCompletionAsync(string sessionId, string userPrompt, string documents)
     {
-
-        string systemPrompt = _systemPromptRetailAssistant + documents;
-
-        ChatMessage systemMessage = new ChatMessage(ChatRole.System, systemPrompt);
+        
+        ChatMessage systemMessage = new ChatMessage(ChatRole.System, _systemPromptRetailAssistant + documents);
         ChatMessage userMessage = new ChatMessage(ChatRole.User, userPrompt);
 
-        
 
         ChatCompletionsOptions options = new()
         {

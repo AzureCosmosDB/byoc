@@ -206,7 +206,7 @@ public class CosmosDbService
     /// Reads all documents retrieved by Vector Search.
     /// </summary>
     /// <param name="vectorSearches">List string of JSON documents from vector search results</param>
-    public async Task<List<string>> GetVectorSearchDocumentsAsync(List<VectorSearchResult> vectorSearches)
+    public async Task<string> GetVectorSearchDocumentsAsync(List<VectorSearchResult> vectorSearches)
     {
 
         List<string> searchDocuments = new List<string>();
@@ -235,7 +235,9 @@ public class CosmosDbService
             searchDocuments.Add(item);
         }
 
-        return searchDocuments;
+        string resultDocuments = string.Join(Environment.NewLine + "-", searchDocuments);
+
+        return resultDocuments;
         
     }
 

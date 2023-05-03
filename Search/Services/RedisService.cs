@@ -1,6 +1,7 @@
 ﻿using StackExchange.Redis;
 using DataCopilot.Search.Utilities;
 using DataCopilot.Search.Models;
+using DataCopilot.Search.Constants;
 
 namespace DataCopilot.Search.Services
 {

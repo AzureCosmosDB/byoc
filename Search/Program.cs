@@ -76,7 +76,7 @@ static class ProgramExtensions
                     key: openAiOptions.Value?.Key ?? String.Empty,
                     embeddingsDeployment: openAiOptions.Value?.EmbeddingsDeployment ?? String.Empty,
                     completionsDeployment: openAiOptions.Value?.CompletionsDeployment ?? String.Empty,
-                    maxConversationTokens: openAiOptions.Value?.MaxConversationTokens ?? String.Empty,
+                    maxConversationBytes: openAiOptions.Value?.MaxConversationBytes ?? String.Empty,
                     logger: provider.GetRequiredService<ILogger<OpenAiService>>()
                 );
             }
