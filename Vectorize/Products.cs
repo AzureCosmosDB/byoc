@@ -16,14 +16,14 @@ namespace DataCopilot.Vectorize
         [FunctionName("Products")]
         public async Task Run(
             [CosmosDBTrigger(
-                databaseName: "CosmicWorksDB",
+                databaseName: "database",
                 containerName: "product",
                 StartFromBeginning = true,
                 Connection = "CosmosDBConnection",
                 LeaseContainerName = "leases",
                 CreateLeaseContainerIfNotExists = true)]IReadOnlyList<Product> input,
             [CosmosDB(
-                databaseName: "CosmicWorksDB",
+                databaseName: "database",
                 containerName: "embedding",
                 Connection = "CosmosDBConnection")]IAsyncCollector<Embedding> output,
             ILogger log)
