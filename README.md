@@ -12,6 +12,11 @@ The solution architecture is represented by this diagram:
     <img src="img/architecture.png" width="100%">
 </p>
 
+The application frontend is a Blazor application with basic Q&A functionality:
+
+<p align="center">
+    <img src="img/ui.png" width="100%">
+</p>
 
 This solution is composed of the following services:
 
@@ -33,7 +38,7 @@ This solution is composed of the following services:
 ### Installation
 
 1. Fork this repository to your own GitHub account.
-1. Depending on whether you deploy using the ARM Template or Bicep, modify this variable in one of those files to point to your fork of this repository, "appGitRepository": "https://github.com/azurecosmosdb/byoc.git" 
+1. Depending on whether you deploy using the ARM Template or Bicep, modify "appGitRepository" variable in one of those files to point to your fork of this repository: https://github.com/azurecosmosdb/byoc.git 
 1. If using the Deploy to Azure button below, also modify this README.md file to change the path for the Deploy To Azure button to your local repository.
 1. If you deploy this application without making either of these changes, you can update the repository by disconnecting and connecting an external git repository pointing to your fork.
 
