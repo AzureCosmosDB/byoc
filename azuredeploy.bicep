@@ -291,10 +291,11 @@ resource appServiceWebSettings 'Microsoft.Web/sites/config@2022-03-01' = {
   name: 'appsettings'
   kind: 'string'
   properties: {
+    APPINSIGHTS_INSTRUMENTATIONKEY: appServiceWebInsights.properties.InstrumentationKey
     COSMOSDB__ENDPOINT: cosmosDbAccount.properties.documentEndpoint
     COSMOSDB__KEY: cosmosDbAccount.listKeys().primaryMasterKey
     COSMOSDB__DATABASE: cosmosDatabase.name
-    COSMOSDB__CONTAINER: 'completions'
+    COSMOSDB__CONTAINERS: 'completions,product,customer'
     OPENAI__ENDPOINT: openAiAccount.properties.endpoint
     OPENAI__KEY: openAiAccount.listKeys().key1
     OPENAI__EMBEDDINGSDEPLOYMENT: openAiEmbeddingsModelDeployment.name
@@ -351,6 +352,15 @@ resource appServiceFunctionsDeployment 'Microsoft.Web/sites/sourcecontrols@2021-
 
 resource appServiceFunctionsInsights 'Microsoft.Insights/components@2020-02-02' = {
   name: appServiceFunction.name
+  location: location
+  kind: 'web'
+  properties: {
+    Application_Type: 'web'
+  }
+}
+
+resource appServiceWebInsights 'Microsoft.Insights/components@2020-02-02' = {
+  name: appServiceWeb.name
   location: location
   kind: 'web'
   properties: {

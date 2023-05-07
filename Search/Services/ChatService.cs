@@ -1,6 +1,7 @@
 ﻿using Azure.AI.OpenAI;
 using DataCopilot.Search.Constants;
 using DataCopilot.Search.Models;
+using Vectorize.Models;
 
 namespace DataCopilot.Search.Services;
 
@@ -115,19 +116,17 @@ public class ChatService
     {
         ArgumentNullException.ThrowIfNull(sessionId);
 
+        //Retrieve conversation, including latest prompt.
+        string conversation = GetChatSessionConversation(sessionId, userPrompt);
 
-
-        //Get embeddings for user prompt. (Not sure whether to persist prompt vectors)
-        (float[] promptVectors, int vectorTokens) = await _openAiService.GetEmbeddingsAsync(sessionId, userPrompt);
+        //Get embeddings for user prompt.
+        (float[] promptVectors, int vectorTokens) = await _openAiService.GetEmbeddingsAsync(sessionId, conversation);
 
         //Do vector search on prompt embeddings, return list of documents to go fetch
-        List<VectorSearchResult> vectorSearchResults =  await _redisService.VectorSearchAsync(promptVectors);
+        List<DocumentVector> vectorSearchResults =  await _redisService.VectorSearchAsync(promptVectors);
 
         //Get the documents from Cosmos DB
         string retrievedDocuments = await _cosmosDbService.GetVectorSearchDocumentsAsync(vectorSearchResults);
-
-        //Retrieve conversation, including latest prompt.
-        string conversation = GetChatSessionConversation(sessionId, userPrompt);
 
         //Generate the completion to return to the user
         (string completion, int promptTokens, int responseTokens) = await _openAiService.GetChatCompletionAsync(sessionId, conversation, retrievedDocuments);

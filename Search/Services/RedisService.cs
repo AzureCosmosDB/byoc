@@ -2,6 +2,7 @@
 using DataCopilot.Search.Utilities;
 using DataCopilot.Search.Models;
 using DataCopilot.Search.Constants;
+using Vectorize.Models;
 
 namespace DataCopilot.Search.Services
 {
@@ -75,15 +76,14 @@ namespace DataCopilot.Search.Services
             }
         }
 
-        public async Task<List<VectorSearchResult>> VectorSearchAsync(float[] embeddings)
+        public async Task<List<DocumentVector>> VectorSearchAsync(float[] embeddings)
         {
 
-            List<VectorSearchResult> retDocs = new List<VectorSearchResult>();
+            List<DocumentVector> retDocs = new List<DocumentVector>();
 
-            QueryModel query = new();
 
-            var resultList = new List<string>(query.ResultsToShow);
-            query.ResetContext = false;
+            int maxResults = 30;
+            var resultList = new List<string>(maxResults);
             _errorMessage = "";
 
 
@@ -92,7 +92,7 @@ namespace DataCopilot.Search.Services
             //Search Redis for similar embeddings
             var res = await _database.ExecuteAsync("FT.SEARCH",
                 "embeddingIndex",
-                $"*=>[KNN {query.ResultsToShow} @vector $BLOB]",
+                $"*=>[KNN {maxResults} @vector $BLOB]",
                 "PARAMS",
                 "2",
                 "BLOB",
@@ -113,44 +113,37 @@ namespace DataCopilot.Search.Services
                 }
 
 
-                EmbeddingType embeddingType = EmbeddingType.unknown;
-
                 for (var i = 0; i < count; i++)
                 {
                     //fetch the RedisResult
-                    RedisResult[] result = (RedisResult[])results[2 * i + 1 + 1];
+                    RedisResult[] result = (RedisResult[])results[(2 * i) + 1 + 1];
 
                     if (result == null)
                         continue;
 
-                    string originalId = "", partitionKey = "";
+                    string itemId = "", partitionKey = "", containerName = "";
+
 
                     for (int j = 0; j < result.Length; j += 2)
                     {
                         var key = (string)result[j];
                         switch (key)
                         {
-                            case "pk":
+                            case "partitionKey":
                                 partitionKey = (string)result[j + 1];
                                 break;
 
-                            case "originalId":
-                                originalId = (string)result[j + 1];
+                            case "itemId":
+                                itemId = (string)result[j + 1];
                                 break;
 
-                            case "type":
-                                embeddingType = (EmbeddingType)ushort.Parse((string)result[j + 1]);
+                            case "containerName":
+                                containerName = (string)result[j + 1];
                                 break;
                         }
                     }
 
-                    //Enum to string
-                    string containerName = EnumerationExtensions.AsText(embeddingType);
-                    
-                    //Resolve mapping customer and order entities to customer container
-                    containerName = (containerName == "product" ? "product" : "customer");
-
-                    retDocs.Add(new VectorSearchResult(documentId: originalId, partitionKey: partitionKey, containerName: containerName));
+                    retDocs.Add(new DocumentVector(itemId, partitionKey, containerName));
 
                 }
 

@@ -1,6 +1,6 @@
 ﻿namespace DataCopilot.Vectorize.Models
 {
-    public class Product : DocModel
+    public class Product
     {
         public string id { get; set; }
         public string categoryId { get; set; }

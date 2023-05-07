@@ -1,6 +1,7 @@
 ﻿using Microsoft.Azure.Cosmos;
 using System.Text.Json;
 using DataCopilot.Vectorize.Models;
+using Vectorize.Models;
 
 namespace DataCopilot.Vectorize.Services;
 
@@ -13,54 +14,12 @@ public class CosmosDB
         _cosmosClient = new CosmosClient(configuration);
     }
 
-    public async Task<int> CountRecords(string collectionName)
+
+    public async IAsyncEnumerable<DocumentVector> GetAllEmbeddings()
     {
-        var container = _cosmosClient.GetContainer("CosmicWorksDB", collectionName);
-        var feedIterator = container.GetItemQueryStreamIterator(new QueryDefinition("SELECT COUNT(1) FROM c"));
-        var response = await feedIterator.ReadNextAsync();
-        using var jsonDoc = JsonDocument.Parse(response.Content);
-        return jsonDoc.RootElement.GetProperty("Documents")[0].GetProperty("$1").GetInt32();
-    }
-
-    public async Task<string> GetDocumentById(EmbeddingType embeddingType, string id, string partitionKey)
-    {
-        //The second part of this line is critical because we have both customer and order in the same container.
-        //That second part says that if not product, then it must be customer container
-        var container = _cosmosClient.GetContainer("CosmicWorksDB", embeddingType == EmbeddingType.product ? "product" : ((embeddingType == EmbeddingType.customer || embeddingType == EmbeddingType.order) ? "customer" : "embedding"));
-        var response = await container.ReadItemStreamAsync(id, new PartitionKey(partitionKey));
-        if ((int)response.StatusCode < 200 || (int)response.StatusCode >= 400)
-        {
-            throw new InvalidOperationException($"Failed to retrieve an item for id '{id}' - status code '{response.StatusCode}");
-        }
-
-        string content = null;
-
-        using (StreamReader sr = new StreamReader(response.Content))
-            content = await sr.ReadToEndAsync();
-
-        return content;
-    }
-
-    // public async IAsyncEnumerable<DocModel> GetAllDocuments(string collectionName)
-    // {
-    //     var container = _cosmosClient.GetContainer("CosmicWorksDB", collectionName);
-    //     using var feedIterator = container.GetItemQueryIterator<DocModel>("SELECT * FROM c");
-    //     while (feedIterator.HasMoreResults)
-    //     {
-    //         var response = await feedIterator.ReadNextAsync();
-    //         foreach (var item in response)
-    //         {
-    //             yield return item;
-    //         }
-    //     }
-    // }
-
-
-    public async IAsyncEnumerable<Embedding> GetAllEmbeddings()
-    {
-        var container = _cosmosClient.GetContainer("CosmicWorksDB", "embedding");
-        // Read items satisfying the query from container
-        using var feedIterator = container.GetItemQueryIterator<Embedding>("SELECT * FROM c");
+        var container = _cosmosClient.GetContainer("database", "embedding");
+        
+        using var feedIterator = container.GetItemQueryIterator<DocumentVector>("SELECT * FROM c");
 
         while (feedIterator.HasMoreResults)
         {
@@ -70,24 +29,5 @@ public class CosmosDB
                 yield return item;
             }
         }
-    }
-
-    public async Task<string> GetDocumentString(EmbeddingType embeddingType, string query)
-    {
-        if (query == null)
-            return null;
-        var container = _cosmosClient.GetContainer("CosmicWorksDB", embeddingType == EmbeddingType.product ? "product" : ((embeddingType == EmbeddingType.customer || embeddingType == EmbeddingType.order) ? "customer" : "embedding"));
-        // Read first item satisfying the query from container
-        using FeedIterator feedIterator = container.GetItemQueryStreamIterator("SELECT * FROM c " + query);
-
-        string content = null;
-        if (feedIterator != null && feedIterator.HasMoreResults)
-            using (ResponseMessage response = await feedIterator.ReadNextAsync())
-            {
-                using (StreamReader sr = new StreamReader(response.Content))
-                    content = await sr.ReadToEndAsync();
-            }
-
-        return content;
     }
 }
