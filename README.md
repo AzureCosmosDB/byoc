@@ -4,20 +4,6 @@ This solution demonstrates how to build generate embeddings or vectors on data s
 
 The data used in this solution is from the [Cosmic Works](https://github.com/azurecosmosdb/cosmicworks) sample for Azure Cosmos DB, adapted from the Adventure Works dataset for a retail Bike Shop that sells bicycles as well as biking accessories, components and clothing.
 
-This solution is composed of the following services
-
-1.	Azure Cosmos DB - Stores the operational retail data, generated embeddings and chat prompts and completions.
-1.	Azure Functions - Hosts a Cosmos DB trigger to generate embeddings when new data is inserted and a Cosmos DB output binding to save the embeddings to Cosmos DB and Redis.
-1.	Azure OpenAI - Generates embeddings using the embeddings API and chat completions using the completions API.
-1.	Azure Cache for Redis Enterprise - For vector search.
-1.	Azure App Service - Hosts Intelligent Agent UX.
-
-Optional components include:
- 
-1.	Enrichment Function with ACS driver
-1.	Azure Cognitive Search
-1.	Azure OpenAI with Embeddings API
-
 ## Solution Architecture
 
 This solution does not yet include Azure Cognitive Search. Will be added in a future version.
@@ -27,6 +13,13 @@ This solution does not yet include Azure Cognitive Search. Will be added in a fu
 </p>
 
 
+This solution is composed of the following services
+
+1.	Azure Cosmos DB - Stores the operational retail data, generated embeddings and chat prompts and completions.
+1.	Azure Functions - Hosts a Cosmos DB trigger to generate embeddings, Cosmos DB output binding to save the embeddings and Redis.
+1.	Azure OpenAI - Generates embeddings using the embeddings API and chat completions using the completions API.
+1.	Azure Cache for Redis Enterprise - For vector search.
+1.	Azure App Service - Hosts Intelligent Agent UX.
 
 ## Getting Started
 
