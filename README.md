@@ -23,8 +23,8 @@ This solution is composed of the following services:
 1.	Azure Cosmos DB - Stores the operational retail data, generated embeddings and chat prompts and completions.
 1.	Azure Functions - Hosts a Cosmos DB trigger to generate embeddings, Cosmos DB output binding to save the embeddings and Redis.
 1.	Azure OpenAI - Generates embeddings using the Embeddings API and chat completions using the Completion API.
-1.	Azure Cache for Redis Enterprise - For vector search.
-1.	Azure App Service - Hosts Intelligent Agent UX.
+1.	Azure Cache for Redis Enterprise - Performs vector matching.
+1.	Azure App Service - Hosts Intelligent Agent UI.
 
 **Note:**  This solution does not yet include Azure Cognitive Search, which will be added in a future version.
 
@@ -33,20 +33,20 @@ This solution is composed of the following services:
 ### Prerequisites
 
 - Azure Subscription
-- Subscription access to Azure OpenAI service. Start here to [Request Acces to Azure OpenAI Service](https://customervoice.microsoft.com/Pages/ResponsePage.aspx?id=v4j5cvGGr0GRqy180BHbR7en2Ais5pxKtso_Pz4b1_xUOFA5Qk1UWDRBMjg0WFhPMkIzTzhKQ1dWNyQlQCN0PWcu)
+- Subscription access to Azure OpenAI service. Start here to [Request Access to Azure OpenAI Service](https://customervoice.microsoft.com/Pages/ResponsePage.aspx?id=v4j5cvGGr0GRqy180BHbR7en2Ais5pxKtso_Pz4b1_xUOFA5Qk1UWDRBMjg0WFhPMkIzTzhKQ1dWNyQlQCN0PWcu)
 
 ### Installation
 
 1. Fork this repository to your own GitHub account.
-1. Depending on whether you deploy using the ARM Template or Bicep, modify this variable in one of those files to point to your fork of this repository, "appGitRepository": "https://github.com/azurecosmosdb/byoc.git" 
+1. Depending on whether you deploy using the ARM Template or Bicep, modify "appGitRepository" variable in one of those files to point to your fork of this repository (https://github.com/azurecosmosdb/byoc.git) 
 1. If using the Deploy to Azure button below, also modify this README.md file to change the path for the Deploy To Azure button to your local repository.
 1. If you deploy this application without making either of these changes, you can update the repository by disconnecting and connecting an external git repository pointing to your fork.
 
 
 The provided ARM or Bicep Template will provision the following resources:
 1. Azure Cosmos DB account with a database and 4 containers at 1000 RU/s autoscale.
-1. Azure App service. This will be configured to deploy the Search web application from **this** GitHub repository. This will work fine if no changes are made. If you want it to deploy from your forked repository, modify the Deploy To Azure button below.
-1. Azure Open AI account with the `gpt-35-turbo` and `text-embedding-ada-002` models deployed.
+1. Azure OpenAI account with the `gpt-35-turbo` and `text-embedding-ada-002` models deployed.
+1. Azure App Service. This will be configured to deploy the Search web application from **this** GitHub repository. This will work fine if no changes are made. If you want it to deploy from your forked repository, modify the Deploy To Azure button below.
 1. Azure Functions. This will run on the same hosting plan as the Azure App Service.
 1. Azure Cache for Redis Enterprise. **Please note that this service costs a minimum of $700 per month.**
 
