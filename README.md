@@ -37,10 +37,10 @@ This solution is composed of the following services:
 
 ### Installation
 
-1. Fork this repository to your own GitHub account.
-1. Depending on whether you deploy using the ARM Template or Bicep, modify this variable in one of those files to point to your fork of this repository, "appGitRepository": "https://github.com/azurecosmosdb/byoc.git" 
-1. If using the Deploy to Azure button below, also modify this README.md file to change the path for the Deploy To Azure button to your local repository.
-1. If you deploy this application without making either of these changes, you can update the repository by disconnecting and connecting an external git repository pointing to your fork.
+1. Click "Deploy to Azure" button below.
+1. Region should match one of the three regions listed below in "Location" to ensure all services are co-located in the same region.
+1. Enter a name prefix for the deployed services. This should be a globally unique name with alpha-numeric characters only.
+1. If you want to deploy from your own fork, modify, "App Git Repository" to point to your own fork of this repository.
 
 
 The provided ARM or Bicep Template will provision the following resources:

@@ -2,6 +2,7 @@
 @allowed([
   'South Central US'
   'East US'
+  'West Europe'
 ])
 param location string = 'East US'
 
@@ -16,9 +17,6 @@ The name defaults to a unique string generated from the resource group identifie
 ''')
 @maxLength(15)
 param name string = uniqueString(resourceGroup().id)
-
-@description('Boolean indicating whether Azure Cosmos DB free tier should be used for the account to offset costs when not being used. This defaults to **true**.')
-param cosmosDbEnableFreeTier bool = true
 
 @description('Specifies the SKU for the Azure App Service plan. Defaults to **B1**')
 @allowed([
@@ -61,7 +59,6 @@ var openAiSettings = {
 
 var cosmosDbSettings = {
   name: '${name}-cosmos-nosql'
-  enableFreeTier: cosmosDbEnableFreeTier
   databaseName: 'database'
 }
 
@@ -157,7 +154,6 @@ resource cosmosDbAccount 'Microsoft.DocumentDB/databaseAccounts@2022-08-15' = {
       defaultConsistencyLevel: 'Session'
     }
     databaseAccountOfferType: 'Standard'
-    enableFreeTier: cosmosDbSettings.enableFreeTier
     locations: [
       {
         failoverPriority: 0

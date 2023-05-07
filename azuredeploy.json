@@ -5,7 +5,7 @@
     "_generator": {
       "name": "bicep",
       "version": "0.17.1.54307",
-      "templateHash": "6130396702083094845"
+      "templateHash": "11302785638416292833"
     }
   },
   "parameters": {
@@ -14,7 +14,8 @@
       "defaultValue": "East US",
       "allowedValues": [
         "South Central US",
-        "East US"
+        "East US",
+        "West Europe"
       ],
       "metadata": {
         "description": "Location where all resources will be deployed. This value defaults to the **East US** region."
@@ -26,13 +27,6 @@
       "maxLength": 15,
       "metadata": {
         "description": "Unique name for the deployed services below. Max length 15 characters, alphanumeric only:\r\n- Azure Cosmos DB\r\n- Azure App Service\r\n- Azure Functions\r\n- Azure OpenAI\r\n- Redis Enterprise\r\nThe name defaults to a unique string generated from the resource group identifier.\r\n"
-      }
-    },
-    "cosmosDbEnableFreeTier": {
-      "type": "bool",
-      "defaultValue": true,
-      "metadata": {
-        "description": "Boolean indicating whether Azure Cosmos DB free tier should be used for the account to offset costs when not being used. This defaults to **true**."
       }
     },
     "appServiceSku": {
@@ -93,7 +87,6 @@
     },
     "cosmosDbSettings": {
       "name": "[format('{0}-cosmos-nosql', parameters('name'))]",
-      "enableFreeTier": "[parameters('cosmosDbEnableFreeTier')]",
       "databaseName": "database"
     },
     "cosmosContainers": {
@@ -193,7 +186,6 @@
           "defaultConsistencyLevel": "Session"
         },
         "databaseAccountOfferType": "Standard",
-        "enableFreeTier": "[variables('cosmosDbSettings').enableFreeTier]",
         "locations": [
           {
             "failoverPriority": 0,
