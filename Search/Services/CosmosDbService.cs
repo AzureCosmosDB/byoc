@@ -1,6 +1,7 @@
 ﻿using DataCopilot.Search.Models;
 using Microsoft.Azure.Cosmos;
 using Microsoft.Azure.Cosmos.Fluent;
+using Vectorize.Models;
 
 namespace DataCopilot.Search.Services;
 
@@ -9,7 +10,7 @@ namespace DataCopilot.Search.Services;
 /// </summary>
 public class CosmosDbService
 {
-    private readonly Container _container;
+    private readonly Container _completions;
     private readonly Database _database;
     private readonly Dictionary<string, Container> _containers;
     private readonly ILogger _logger;
@@ -20,17 +21,17 @@ public class CosmosDbService
     /// <param name="endpoint">Endpoint URI.</param>
     /// <param name="key">Account key.</param>
     /// <param name="databaseName">Name of the database to access.</param>
-    /// <param name="containerName">Name of the container to access.</param>
-    /// <exception cref="ArgumentNullException">Thrown when endpoint, key, databaseName, or containerName is either null or empty.</exception>
+    /// <param name="containerNames">Names of the containers to access.</param>
+    /// <exception cref="ArgumentNullException">Thrown when endpoint, key, databaseName, or containerNames is either null or empty.</exception>
     /// <remarks>
     /// This constructor will validate credentials and create a service client instance.
     /// </remarks>
-    public CosmosDbService(string endpoint, string key, string databaseName, string containerName, ILogger logger)
+    public CosmosDbService(string endpoint, string key, string databaseName, string containerNames, ILogger logger)
     {
         ArgumentException.ThrowIfNullOrEmpty(endpoint);
         ArgumentException.ThrowIfNullOrEmpty(key);
         ArgumentException.ThrowIfNullOrEmpty(databaseName);
-        ArgumentException.ThrowIfNullOrEmpty(containerName);
+        ArgumentException.ThrowIfNullOrEmpty(containerNames);
 
         _logger = logger;
 
@@ -48,22 +49,23 @@ public class CosmosDbService
         _database = database ??
             throw new ArgumentException("Unable to connect to existing Azure Cosmos DB database.");
 
-        Container? container = database?.GetContainer(containerName);
-        _container = container ??
-            throw new ArgumentException("Unable to connect to existing Azure Cosmos DB container or database.");
 
-
-        //Create a cache of container references for all containers in the database
+        //Dictionary of container references for all containers listed in config
         _containers = new Dictionary<string, Container>();
-        FeedIterator<ContainerProperties> feedIterator = _database.GetContainerQueryIterator<ContainerProperties>("SELEcT * FROM c");
-        while(feedIterator.HasMoreResults)
+        
+        List<string> containers = containerNames.Split(',').ToList();
+        
+        foreach (string containerName in containers)
         {
-            FeedResponse<ContainerProperties> response = feedIterator.ReadNextAsync().Result;
-            foreach (ContainerProperties containerProperties in response)
-            {
-                _containers.Add(containerProperties.Id, _database.GetContainer(containerProperties.Id));
-            }
+
+            Container? container = database?.GetContainer(containerName.Trim()) ??
+                throw new ArgumentException("Unable to connect to existing Azure Cosmos DB container or database.");
+
+                _containers.Add(containerName, container);
         }
+
+        //Treating this one differently
+        _completions = _containers["completions"];
     }
 
     /// <summary>
@@ -75,7 +77,7 @@ public class CosmosDbService
         QueryDefinition query = new QueryDefinition("SELECT DISTINCT * FROM c WHERE c.type = @type")
             .WithParameter("@type", nameof(Session));
 
-        FeedIterator<Session> response = _container.GetItemQueryIterator<Session>(query);
+        FeedIterator<Session> response = _completions.GetItemQueryIterator<Session>(query);
 
         List<Session> output = new();
         while (response.HasMoreResults)
@@ -97,7 +99,7 @@ public class CosmosDbService
             .WithParameter("@sessionId", sessionId)
             .WithParameter("@type", nameof(Message));
 
-        FeedIterator<Message> results = _container.GetItemQueryIterator<Message>(query);
+        FeedIterator<Message> results = _completions.GetItemQueryIterator<Message>(query);
 
         List<Message> output = new();
         while (results.HasMoreResults)
@@ -116,7 +118,7 @@ public class CosmosDbService
     public async Task<Session> InsertSessionAsync(Session session)
     {
         PartitionKey partitionKey = new(session.SessionId);
-        return await _container.CreateItemAsync(
+        return await _completions.CreateItemAsync(
             item: session,
             partitionKey: partitionKey
         );
@@ -130,7 +132,7 @@ public class CosmosDbService
     public async Task<Message> InsertMessageAsync(Message message)
     {
         PartitionKey partitionKey = new(message.SessionId);
-        return await _container.CreateItemAsync(
+        return await _completions.CreateItemAsync(
             item: message,
             partitionKey: partitionKey
         );
@@ -144,7 +146,7 @@ public class CosmosDbService
     public async Task<Session> UpdateSessionAsync(Session session)
     {
         PartitionKey partitionKey = new(session.SessionId);
-        return await _container.ReplaceItemAsync(
+        return await _completions.ReplaceItemAsync(
             item: session,
             id: session.Id,
             partitionKey: partitionKey
@@ -163,7 +165,7 @@ public class CosmosDbService
         }
 
         PartitionKey partitionKey = new(messages.First().SessionId);
-        TransactionalBatch batch = _container.CreateTransactionalBatch(partitionKey);
+        TransactionalBatch batch = _completions.CreateTransactionalBatch(partitionKey);
         foreach (var message in messages)
         {
             batch.UpsertItem(
@@ -186,9 +188,9 @@ public class CosmosDbService
         QueryDefinition query = new QueryDefinition("SELECT c.id FROM c WHERE c.sessionId = @sessionId")
                 .WithParameter("@sessionId", sessionId);
 
-        FeedIterator<Message> response = _container.GetItemQueryIterator<Message>(query);
+        FeedIterator<Message> response = _completions.GetItemQueryIterator<Message>(query);
 
-        TransactionalBatch batch = _container.CreateTransactionalBatch(partitionKey);
+        TransactionalBatch batch = _completions.CreateTransactionalBatch(partitionKey);
         while (response.HasMoreResults)
         {
             FeedResponse<Message> results = await response.ReadNextAsync();
@@ -205,34 +207,40 @@ public class CosmosDbService
     /// <summary>
     /// Reads all documents retrieved by Vector Search.
     /// </summary>
-    /// <param name="vectorSearches">List string of JSON documents from vector search results</param>
-    public async Task<string> GetVectorSearchDocumentsAsync(List<VectorSearchResult> vectorSearches)
+    /// <param name="vectorDocuments">List string of JSON documents from vector search results</param>
+    public async Task<string> GetVectorSearchDocumentsAsync(List<DocumentVector> vectorDocuments)
     {
 
         List<string> searchDocuments = new List<string>();
 
-        foreach (var vectorSearch in vectorSearches)
+        foreach (var document in vectorDocuments)
         {
 
+            try { 
+                ResponseMessage response = await _containers[document.containerName].ReadItemStreamAsync(
+                    document.itemId, new PartitionKey(document.partitionKey));
+
+
+                if ((int)response.StatusCode < 200 || (int)response.StatusCode >= 400)
+                    _logger.LogError($"Failed to retrieve an item for id '{document.itemId}' - status code '{response.StatusCode}");
+
+                if (response.Content == null)
+                {
+                    _logger.LogInformation($"Null content received for document '{document.itemId}' - status code '{response.StatusCode}");
+                    continue;
+                }
+
+                string item;
+                using (StreamReader sr = new StreamReader(response.Content))
+                    item = await sr.ReadToEndAsync();
             
-            ResponseMessage response = await _containers[vectorSearch.containerName].ReadItemStreamAsync(
-                vectorSearch.documentId, new PartitionKey(vectorSearch.partitionKey));
-
-
-            if ((int)response.StatusCode < 200 || (int)response.StatusCode >= 400)
-                _logger.LogError($"Failed to retrieve an item for id '{vectorSearch.documentId}' - status code '{response.StatusCode}");
-
-            if (response.Content == null)
-            {
-                _logger.LogInformation($"Null content received for document '{vectorSearch.documentId}' - status code '{response.StatusCode}");
-                continue;
+                searchDocuments.Add(item);
             }
-
-            string item;
-            using (StreamReader sr = new StreamReader(response.Content))
-                item = await sr.ReadToEndAsync();
+            catch(Exception ex) 
+            {
+                _logger.LogError(ex.Message, ex);
             
-            searchDocuments.Add(item);
+            }
         }
 
         string resultDocuments = string.Join(Environment.NewLine + "-", searchDocuments);

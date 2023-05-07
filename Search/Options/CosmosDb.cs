@@ -8,7 +8,7 @@ public record CosmosDb
 
     public required string Database { get; init; }
 
-    public required string Container { get; init; }
+    public required string Containers { get; init; }
 
     public required ILogger Logger { get; init; }
 };

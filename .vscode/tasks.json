@@ -71,7 +71,7 @@
 			"type": "func",
 			"dependsOn": "build (functions)",
 			"options": {
-				"cwd": "${workspaceFolder}/Vectorize/bin/Debug/net6.0"
+				"cwd": "${workspaceFolder}/Vectorize/bin/Debug/net7.0"
 			},
 			"command": "host start",
 			"isBackground": true,
@@ -109,6 +109,6 @@
 			"options": {
 				"cwd": "${workspaceFolder}/Search"
 			}
-		},
+		}
 	]
 }

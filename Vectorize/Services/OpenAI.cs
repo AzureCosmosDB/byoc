@@ -1,5 +1,6 @@
 ﻿using Azure;
 using Azure.AI.OpenAI;
+using Azure.Core;
 using Microsoft.Extensions.Logging;
 using System.Text;
 
@@ -7,14 +8,34 @@ namespace DataCopilot.Vectorize.Services;
 
 public class OpenAI
 {
-    private static readonly string openAIEndpoint = Environment.GetEnvironmentVariable("OpenAIEndpoint");
-    private static readonly string openAIKey = Environment.GetEnvironmentVariable("OpenAIKey");
-    private static readonly string openAIEmbeddings = Environment.GetEnvironmentVariable("OpenAIEmbeddings");
-    private static readonly string openAICompletions = Environment.GetEnvironmentVariable("OpenAICompletions");
+    private string openAIEndpoint = Environment.GetEnvironmentVariable("OpenAIEndpoint");
+    private string openAIKey = Environment.GetEnvironmentVariable("OpenAIKey");
+    private string openAIEmbeddings = Environment.GetEnvironmentVariable("EmbeddingsDeployment");
+    private int openAIMaxTokens = int.Parse(Environment.GetEnvironmentVariable("OpenAIMaxTokens"));
 
-    private static readonly int openAIMaxTokens = int.Parse(Environment.GetEnvironmentVariable("OpenAIMaxTokens"));
+    private OpenAIClient client;
 
-    private readonly OpenAIClient client = new(new Uri(openAIEndpoint), new AzureKeyCredential(openAIKey));
+    
+
+    public OpenAI()
+    {
+        OpenAIClientOptions options = new OpenAIClientOptions()
+        { 
+            Retry =
+            {
+                Delay = TimeSpan.FromSeconds(2),
+                MaxRetries = 10,
+                Mode = RetryMode.Exponential
+            }
+        };
+
+        //Use this as endpoint in configuration to use non-Azure Open AI endpoint and OpenAI model names
+        if (openAIEndpoint.Contains("api.openai.com"))
+            client = new OpenAIClient(openAIKey, options);
+        else
+            client = new(new Uri(openAIEndpoint), new AzureKeyCredential(openAIKey), options);
+
+    }
 
     public async Task<float[]> GetEmbeddingsAsync(dynamic data, ILogger log)
     {
@@ -23,7 +44,6 @@ public class OpenAI
             EmbeddingsOptions options = new EmbeddingsOptions(data)
             {
                 Input = data
-                //InputType = "foo"
             };
 
             var response = await client.GetEmbeddingsAsync(openAIEmbeddings, options);
@@ -40,84 +60,4 @@ public class OpenAI
             return null;
         }
     }
-
-
-    private const string SystemPromptStart =
-    """
-    Assistant is an intelligent chatbot designed to help users answer their questions related to the contents of their documents containing information on products, customers and sales orders in JSON format.
-    Instructions:
-    - Only answer questions related to the documents provided below,
-    - Don't reference any other product/customer/sales order data,
-    - If you're unsure of an answer, you can say "I don't know" or "I'm not sure" and recommend users search themselves.
-
-    Text of relevant documents:
-    """;
-
-    public ChatCompletionsOptions GetChatRequest(string prompt, IEnumerable<string?> context, ILogger log)
-    {
-        //TODO: add context
-        log.LogInformation($"Input: {prompt}");
-        ChatCompletionsOptions chatOptions = new ChatCompletionsOptions()
-        {
-            Temperature = 0.5f,
-            NucleusSamplingFactor = 0.95f,
-            FrequencyPenalty = 0,
-            PresencePenalty = 0
-        };
-
-        var content = new StringBuilder(SystemPromptStart);
-        foreach (var c in context)
-        {
-            content.Append("- ").AppendLine(c);
-        }
-
-        chatOptions.Messages.Add(new ChatMessage("system", content.ToString()));
-        chatOptions.Messages.Add(new ChatMessage("user", prompt));
-
-        return chatOptions;
-
-    }
-
-    public async Task<ChatCompletions> GetChatResponse(ChatCompletionsOptions request, ILogger log)
-    {
-        try
-        {
-
-            Response<ChatCompletions> completionsResponse = await client.GetChatCompletionsAsync(openAICompletions, request);
-            string completion = completionsResponse.Value.Choices[0].Message.Content;
-            log.LogInformation($"Returning completion: {completion}");
-
-            return completionsResponse.Value;
-        }
-        catch (Exception ex)
-        {
-            log.LogError(ex.Message);
-            return null;
-        }
-    }
-}
-
-public class EmbeddingRequest
-{
-    public string input { get; set; } = "";
-}
-
-public class ChatResponse
-{
-    public Choice[] choices { get; set; } = Array.Empty<Choice>();
-    public Usage? usage { get; set; }
-
-    public string Content => choices[0].message?.Content ?? "";
-}
-
-public class Choice
-{
-    public ChatMessage? message { get; set; }
-}
-
-public class Usage
-{
-    public int completion_tokens { get; set; }
-    public int prompt_tokens { get; set; }
-    public int total_tokens { get; set; }
 }

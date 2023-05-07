@@ -3,6 +3,7 @@ using StackExchange.Redis;
 using DataCopilot.Vectorize.Utils;
 using DataCopilot.Vectorize.Models;
 using Microsoft.Azure.Cosmos;
+using Vectorize.Models;
 
 namespace DataCopilot.Vectorize.Services
 {
@@ -77,7 +78,7 @@ namespace DataCopilot.Vectorize.Services
             }
         }
 
-        public async Task CacheEmbeddings(Embedding emb, ILogger log)
+        public async Task CacheVector(DocumentVector documentVector, ILogger log)
         {
             try
             {
@@ -86,16 +87,15 @@ namespace DataCopilot.Vectorize.Services
 
                 var db = _connectionMultiplexer.GetDatabase();
 
-                var mem = new ReadOnlyMemory<float>(emb.embeddings);
+                var mem = new ReadOnlyMemory<float>(documentVector.vector);
 
-                await db.HashSetAsync(emb.id, new[]{
-                                                        new HashEntry("vector", mem.AsBytes()),
-                                                        new HashEntry("originalId", emb.originalId),
-                                                        new HashEntry("type", (int) emb.type),
-                                                        new HashEntry("pk", emb.partitionKey)
-                                                        //new HashEntry("data", document.data)
-                                                    });
-                //return vector;
+                await db.HashSetAsync(documentVector.id, new[]{
+                    new HashEntry("vector", mem.AsBytes()),
+                    new HashEntry("itemId", documentVector.itemId),
+                    new HashEntry("containerName", documentVector.containerName),
+                    new HashEntry("partitionKey", documentVector.partitionKey)
+                });
+
             }
             catch (Exception e)
             {
@@ -131,8 +131,8 @@ namespace DataCopilot.Vectorize.Services
                 log.LogInformation("Processing documents...");
                 await foreach (var doc in _cosmosDB.GetAllEmbeddings())
                 {
-                    await CacheEmbeddings(doc, log);
-                    log.LogInformation($"\tCached embedding for document with id '{doc.originalId}'");
+                    await CacheVector(doc, log);
+                    log.LogInformation($"\tCached embedding for document with id '{doc.itemId}'");
                 }
                 log.LogInformation("Done.");
             }

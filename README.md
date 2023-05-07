@@ -1,36 +1,120 @@
-# Data Copilot for Azure Cosmos DB 
+# Build Your Own Copilot (BYOC) for Azure Cosmos DB 
 
-This solution demonstrates the use of Azure Cosmos DB + Azure OpenAI combination with useful generic functionality applicable to many Azure Cosmos DB deployments out there, that is – answering natural language questions about the data stored in Cosmos DB containers. It uses Cosmic Works dataset for retail (which could be replaced with any other dataset with some text in it) and answers some of the product questions intelligently, even though no provisions are done for retail specifically. 
+This solution demonstrates how to build generate embeddings or vectors on data stored in Azure Cosmos DB using OpenAI to use in a vector search scenario to answer specific questions about the data stored in Azure Cosmos DB in a consumer Retail "Intelligent Agent" scenario that allows users to ask questions on products and customer stored in the database. 
 
-Behind the scenes, it uses Azure Cache for Redis to cache and match embeddings and Azure Cosmos DB for persistent storage of original data, embedding vectors, and orchestration of the whole process through its Change Feed and Azure Functions integrations:
+The data used in this solution is from the [Cosmic Works](https://github.com/azurecosmosdb/cosmicworks) sample for Azure Cosmos DB, adapted from the Adventure Works dataset for a retail Bike Shop that sells bicycles as well as biking accessories, components and clothing.
+
+This solution is composed of the following services
+
+1.	Azure Cosmos DB - Stores the operational retail data, generated embeddings and chat prompts and completions.
+1.	Azure Functions - Hosts a Cosmos DB trigger to generate embeddings when new data is inserted and a Cosmos DB output binding to save the embeddings to Cosmos DB and Redis.
+1.	Azure OpenAI - Generates embeddings using the embeddings API and chat completions using the completions API.
+1.	Azure Cache for Redis Enterprise - For vector search.
+1.	Azure App Service - Hosts Intelligent Agent UX.
+
+Optional components include:
+ 
+1.	Enrichment Function with ACS driver
+1.	Azure Cognitive Search
+1.	Azure OpenAI with Embeddings API
+
+## Solution Architecture
+
+This solution does not yet include Azure Cognitive Search. Will be added in a future version.
 
 <p align="center">
     <img src="img/architecture.png" width="100%">
 </p>
 
-The necessary components for this solution include (all in the same region where OpenAI is present – EastUS/WestEurope/SouthCentralUS):
- 
-1.	Azure Cosmos DB database with containers with seed data (Cosmic Works 4) and embeddings
-2.	Embedding Azure Function with Cosmos DB trigger 
-3.	Azure OpenAI with Completions API and Embeddings API
-4.	Azure Cache for Redis Enterprise
-5.	Q&A Blazor App using Azure OpenAI driver and Redis driver
- 
-Optional components include:
- 
-6.	Azure Cognitive Search
-7.	Enrichment Azure Function using ACS driver
 
-## Deployment
-1. Clone the repo and install prerequisites (.NET SDK, Azurite, Azure Functions SDK)
-    
-    a. Make sure all resources required are deployed in Azure subscription (e.g. Redis Enterprise, OpenAI with two models for embeddings and completions (text-ada-embeddings-002 and gpt-35-turbo))
-    b. Make sure to start Azurite Blob Service before debuggin/running for Azure Functions's local storage
-2. Create embedding collection in your Cosmos DB database with /id as a shard key and minimal throughput
-3. Change the local.settings.json to reflect your subscription/services details (self-descriptive, or get working local.settings.json from authors)
-4. Run/Debug and watch the embedding collection populated with all existing documents' embeddings and then adding new embeddings for every new/changed document
-5. Submit the questions through the web page that comes up (e.g. http://localhost:8100) and see the response produced by ChatGPT on the same page:
 
-<p align="center">
-    <img src="img/ui.png" width="100%">
-</p>
+## Getting Started
+
+### Prerequisites
+
+- Azure Subscription
+- Subscription access to Azure OpenAI service. Start here to [Request Acces to Azure OpenAI Service](https://customervoice.microsoft.com/Pages/ResponsePage.aspx?id=v4j5cvGGr0GRqy180BHbR7en2Ais5pxKtso_Pz4b1_xUOFA5Qk1UWDRBMjg0WFhPMkIzTzhKQ1dWNyQlQCN0PWcu)
+
+### Installation
+
+1. Fork this repository to your own GitHub account.
+1. Depending on whether you deploy using the ARM Template or Bicep, modify this variable in one of those files to point to your fork of this repository, "appGitRepository": "https://github.com/azurecosmosdb/byoc.git" 
+1. If using the Deploy to Azure button below, also modify this README.md file to change the path for the Deploy To Azure button to your local repository.
+1. If you deploy this application without making either of these changes, you can update the repository by disconnecting and connecting an external git repository pointing to your fork.
+
+
+The provided ARM or Bicep Template will provision the following resources:
+1. Azure Cosmos DB account with a database and 4 containers at 1000 RU/s autoscale.
+1. Azure App service. This will be configured to deploy the Search web application from **this** GitHub repository. This will work fine if no changes are made. If you want it to deploy from your forked repository, modify the Deploy To Azure button below.
+1. Azure Open AI account with the `gpt-35-turbo` and `text-embedding-ada-002` models deployed.
+1. Azure Functions. This will run on the same hosting plan as the Azure App Service.
+1. Azure Cache for Redis Enterprise. **Please note that this service costs about $1000 USD per month.**
+
+**Note:** You must have access to Azure Open AI service from your subscription before attempting to deploy this application.
+
+All connection information for Azure Cosmos DB, Open AI and Redis is zero-touch and injected as environment variables into Azure App Service and Azure Functions at deployment time. 
+
+[![Deploy to Azure](https://aka.ms/deploytoazurebutton)](https://portal.azure.com/#create/Microsoft.Template/uri/https%3A%2F%2Fraw.githubusercontent.com%2FAzureCosmosDB%2Fbyoc%2Fmain%2Fazuredeploy.json)
+
+### Doing initial data load
+
+The data for this solution must be loaded once it has been deployed. The process for loading data also starts the process of generating vectors for all of the operational retail data in this solution. Follow the steps below.
+
+1. Download and install the [Azure Cosmos DB Data Migration Desktop Tool](https://github.com/AzureCosmosDB/data-migration-desktop-tool/releases)
+1. Copy the `migrationsettings.json` in the root folder for this repository and replace the version in the directory where you downloaded the tool above.
+1. Open the file using any text editor.
+1. Open the Azure Cosmos DB blade in the resource group for this solution.
+1. Navigate to the Keys blade in Azure Portal and copy the Primary Connection String for the Cosmos DB account.
+1. Paste the connection string in the two locations where it says, `ADD-COSMOS-CONNECTION-STRING`. Save the file.
+1. Execute DMT.exe
+1. You can watch Azure Functions processing the data by navigating to Azure Functions in the portal.
+
+### Quickstart
+
+1. After deployment, go to the resource group for your deployment and open the Azure App Service in the Azure Portal. Click the web url to launch the website.
+1. Click + New Chat to create a new chat session.
+1. Type in product and customer questions in the text box and press Enter.
+
+Here are some sample questions you can ask:
+
+- What kind of socks do you have available?
+- Do you have any customers from Canada? Where in Canada are they from?
+- What kinds of bikes are in your product inventory?
+
+
+## Clean up
+
+To remove all the resources used by this sample, you must first manually delete the deployed model within the Azure AI service. You can then delete the resource group for your deployment. This will delete all remaining resources.
+
+
+## Run locally and debug
+
+This solution can be run locally post deployment. Below are the prerequisites and steps.
+
+### Prerequisites
+
+- Visual Studio, VS Code, or some editor if you want to edit or view the source for this sample.
+- .NET 7 SDK
+- Azure Functions SDK v4
+- Azureite, for debugging using Azure Functions's local storage.
+
+### Local steps
+
+#### Search Azure App Service
+- Open the Configuration for the Azure App Service and copy the application setting values.
+- Within Visual Studio, right click the Search project, then copy the contents of appsettings.json into the User Secrets. 
+- If not using Visual Studio, create an `appsettings.Development.json` file and copy the appsettings.json and values into it.
+ 
+
+#### Vectorize Azure Function
+- Open the Configuration for the Azure Function copy the application setting values.
+- Within Visual Studio, right click the Vectorize project, then copy the contents of local.settings.json and the application setting values into the User Secrets. If not using Visual Studio, create an `local.settings.Development.json` file and copy the local.settings.json and values into it.
+
+
+
+## Resources
+
+- [Upcoming blog post announcement](https://devblogs.microsoft.com/cosmosdb/)
+- [Azure Cosmos DB Free Trial](https://aka.ms/TryCosmos)
+- [Open AI Platform documentation](https://platform.openai.com/docs/introduction/overview)
+- [Azure Open AI Service documentation](https://learn.microsoft.com/azure/cognitive-services/openai/)

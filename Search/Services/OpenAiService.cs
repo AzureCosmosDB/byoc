@@ -1,7 +1,12 @@
 ﻿using Azure;
 using Azure.AI.OpenAI;
+using Azure.Core;
 using DataCopilot.Search.Components;
 using DataCopilot.Search.Models;
+using Newtonsoft.Json;
+using Newtonsoft.Json.Linq;
+using System.Net;
+using System.Net.Http.Headers;
 using System.Text.RegularExpressions;
 
 namespace DataCopilot.Search.Services;
@@ -11,11 +16,11 @@ namespace DataCopilot.Search.Services;
 /// </summary>
 public class OpenAiService
 {
-    private readonly string _embeddingsDeployment = string.Empty;
-    private readonly string _completionsDeployment = string.Empty;
+    private readonly string _embeddingsModelOrDeployment = string.Empty;
+    private readonly string _completionsModelOrDeployment = string.Empty;
     private readonly int _maxConversationBytes = default;
     private readonly ILogger _logger;
-    private readonly OpenAIClient _client;
+    private readonly OpenAIClient _client;    
 
 
 
@@ -62,18 +67,35 @@ public class OpenAiService
     /// </remarks>
     public OpenAiService(string endpoint, string key, string embeddingsDeployment, string completionsDeployment, string maxConversationBytes, ILogger logger)
     {
-        ArgumentException.ThrowIfNullOrEmpty(endpoint);
+        //ArgumentException.ThrowIfNullOrEmpty(endpoint);
         ArgumentException.ThrowIfNullOrEmpty(key);
         ArgumentException.ThrowIfNullOrEmpty(embeddingsDeployment);
         ArgumentException.ThrowIfNullOrEmpty(completionsDeployment);
         ArgumentException.ThrowIfNullOrEmpty(maxConversationBytes);
 
-        _embeddingsDeployment = embeddingsDeployment;
-        _completionsDeployment = completionsDeployment;
+        _embeddingsModelOrDeployment = embeddingsDeployment;
+        _completionsModelOrDeployment = completionsDeployment;
         _maxConversationBytes = int.TryParse(maxConversationBytes, out _maxConversationBytes) ? _maxConversationBytes : 2000;
+
         _logger = logger;
 
-        _client = new(new Uri(endpoint), new AzureKeyCredential(key));
+        OpenAIClientOptions options = new OpenAIClientOptions()
+        {
+            Retry =
+            {
+                Delay = TimeSpan.FromSeconds(2),
+                MaxRetries = 10,
+                Mode = RetryMode.Exponential
+            }
+        };
+
+        //Use this as endpoint in configuration to use non-Azure Open AI endpoint and OpenAI model names
+        if (endpoint.Contains("api.openai.com"))
+            _client = new OpenAIClient(key, options);
+        else
+            _client = new(new Uri(endpoint), new AzureKeyCredential(key), options);
+        
+
     }
 
     /// <summary>
@@ -84,6 +106,8 @@ public class OpenAiService
     /// <returns>Response from the OpenAI model as an array of vectors along with tokens for the prompt and response.</returns>
     public async Task<(float[] response, int responseTokens)> GetEmbeddingsAsync(string sessionId, string input)
     {
+
+        //await HttpRequestAsync(input);
 
         float[] embedding = new float[0];
         int responseTokens = 0;
@@ -96,7 +120,9 @@ public class OpenAiService
                 User = sessionId
             };
 
-            var response = await _client.GetEmbeddingsAsync(_embeddingsDeployment, options);
+
+            var response = await _client.GetEmbeddingsAsync(_embeddingsModelOrDeployment, options);
+
 
             Embeddings embeddings = response.Value;
 
@@ -125,37 +151,49 @@ public class OpenAiService
     /// <returns>Response from the OpenAI model along with tokens for the prompt and response.</returns>
     public async Task<(string response, int promptTokens, int responseTokens)> GetChatCompletionAsync(string sessionId, string userPrompt, string documents)
     {
-        
-        ChatMessage systemMessage = new ChatMessage(ChatRole.System, _systemPromptRetailAssistant + documents);
-        ChatMessage userMessage = new ChatMessage(ChatRole.User, userPrompt);
 
-
-        ChatCompletionsOptions options = new()
+        try
         {
+        
+            ChatMessage systemMessage = new ChatMessage(ChatRole.System, _systemPromptRetailAssistant + documents);
+            ChatMessage userMessage = new ChatMessage(ChatRole.User, userPrompt);
 
-            Messages =
+
+            ChatCompletionsOptions options = new()
             {
-                systemMessage,
-                userMessage
-            },
-            User = sessionId,
-            MaxTokens = 4000,
-            Temperature = 0.5f, //0.3f,
-            NucleusSamplingFactor = 0.95f, //0.5f,
-            FrequencyPenalty = 0,
-            PresencePenalty = 0
-        };
 
-        Response<ChatCompletions> completionsResponse = await _client.GetChatCompletionsAsync(_completionsDeployment, options);
+                Messages =
+                {
+                    systemMessage,
+                    userMessage
+                },
+                User = sessionId,
+                Temperature = 0.5f, //0.3f,
+                NucleusSamplingFactor = 0.95f, //0.5f,
+                FrequencyPenalty = 0,
+                PresencePenalty = 0
+            };
 
+            Response<ChatCompletions> completionsResponse = await _client.GetChatCompletionsAsync(_completionsModelOrDeployment, options);
+        
 
-        ChatCompletions completions = completionsResponse.Value;
+            ChatCompletions completions = completionsResponse.Value;
 
-        return (
-            response: completions.Choices[0].Message.Content,
-            promptTokens: completions.Usage.PromptTokens,
-            responseTokens: completions.Usage.CompletionTokens
-        );
+            return (
+                response: completions.Choices[0].Message.Content,
+                promptTokens: completions.Usage.PromptTokens,
+                responseTokens: completions.Usage.CompletionTokens
+            );
+
+        }
+        catch ( Exception ex ) 
+        { 
+        
+            _logger.LogError(ex.Message, ex);
+        
+        }
+
+        return ("", 0, 0);
     }
 
     /// <summary>
@@ -166,7 +204,7 @@ public class OpenAiService
     /// <returns>Summarization response from the OpenAI model deployment.</returns>
     public async Task<string> SummarizeAsync(string sessionId, string userPrompt)
     {
-        
+
         ChatMessage systemMessage = new ChatMessage(ChatRole.System, _summarizePrompt);
         ChatMessage userMessage = new ChatMessage(ChatRole.User, userPrompt);
 
@@ -184,7 +222,7 @@ public class OpenAiService
             PresencePenalty = 0
         };
 
-        Response<ChatCompletions> completionsResponse = await _client.GetChatCompletionsAsync(_completionsDeployment, options);
+        Response<ChatCompletions> completionsResponse = await _client.GetChatCompletionsAsync(_completionsModelOrDeployment, options);
 
         ChatCompletions completions = completionsResponse.Value;
         string output = completions.Choices[0].Message.Content;

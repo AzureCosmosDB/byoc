@@ -1,6 +1,6 @@
 ﻿namespace DataCopilot.Vectorize.Models
 {
-    public class SalesOrder : DocModel
+    public class SalesOrder
     {
         public string id { get; set; }
         public string type { get; set; }

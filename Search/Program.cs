@@ -57,7 +57,7 @@ static class ProgramExtensions
                     endpoint: cosmosDbOptions.Value?.Endpoint ?? String.Empty,
                     key: cosmosDbOptions.Value?.Key ?? String.Empty,
                     databaseName: cosmosDbOptions.Value?.Database ?? String.Empty,
-                    containerName: cosmosDbOptions.Value?.Container ?? String.Empty,
+                    containerNames: cosmosDbOptions.Value?.Containers ?? String.Empty,
                     logger: provider.GetRequiredService<ILogger<CosmosDb>>()
                 );
             }

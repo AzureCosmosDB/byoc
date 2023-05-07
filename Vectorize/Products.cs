@@ -3,15 +3,15 @@ using Microsoft.Extensions.Logging;
 using Newtonsoft.Json.Linq;
 using DataCopilot.Vectorize.Models;
 using DataCopilot.Vectorize.Services;
+using Vectorize.Models;
 
 namespace DataCopilot.Vectorize
 {
     public class Products
     {
 
-        private readonly OpenAI _openAI = new OpenAI();
-
-        private static Redis _redis;
+        private OpenAI _openAI;
+        private Redis _redis;
 
         [FunctionName("Products")]
         public async Task Run(
@@ -25,9 +25,13 @@ namespace DataCopilot.Vectorize
             [CosmosDB(
                 databaseName: "database",
                 containerName: "embedding",
-                Connection = "CosmosDBConnection")]IAsyncCollector<Embedding> output,
+                Connection = "CosmosDBConnection")]IAsyncCollector<DocumentVector> output,
             ILogger log)
         {
+
+            _redis = new Redis(log);
+            _openAI = new OpenAI();
+
             if (input != null && input.Count > 0)
             {
                 log.LogInformation("Generating embeddings for " + input.Count + " products");
@@ -35,7 +39,7 @@ namespace DataCopilot.Vectorize
                 {
                     foreach (Product item in input)
                     {
-                        await GenerateProductEmbeddings(item, output, log);
+                        await GenerateProductVectors(item, output, log);
                     }
                 }
                 finally
@@ -44,44 +48,31 @@ namespace DataCopilot.Vectorize
             }
         }
 
-        public async Task GenerateProductEmbeddings(Product product, IAsyncCollector<Embedding> output, ILogger log)
+        public async Task GenerateProductVectors(Product product, IAsyncCollector<DocumentVector> output, ILogger log)
         {
             //Serialize the product object to send to OpenAI
             string sProduct = JObject.FromObject(product).ToString();
-            //int len = sProduct.Length;
 
-
-            Embedding embedding = new Embedding();
-            embedding.id = Guid.NewGuid().ToString();
-            embedding.type = EmbeddingType.product;
-            embedding.originalId = product.id;
-            embedding.partitionKey = product.categoryId;
+            DocumentVector documentVector = new DocumentVector(product.id, product.categoryId, "product");
             
             try
             {
-
                 //Get the embeddings from OpenAI
-                var listEmbeddings = await _openAI.GetEmbeddingsAsync(sProduct, log);
+                documentVector.vector = await _openAI.GetEmbeddingsAsync(sProduct, log);
 
+                //Save to Cosmos DB
+                await output.AddAsync(documentVector);
 
-                //Add to embeddings object
-                embedding.embeddings = listEmbeddings;
+                //Save to Redis Cache
+                await _redis.CacheVector(documentVector, log);
+
+                log.LogInformation("Cached embeddings for product: " + product.name);
             }
             catch (Exception x)
             {
                 log.LogError("Exception while generating embeddings for [" + product.name + "]: " + x.Message);
             }
 
-
-            //Insert embeddings into Cosmos DB
-            await output.AddAsync(embedding);
-
-
-            //Update Redis Cache with embeddings
-            _redis = new Redis(log);
-            await _redis.CacheEmbeddings(embedding, log);
-
-            log.LogInformation("Cached embeddings for product: " + product.name);
         }
     }
 }
