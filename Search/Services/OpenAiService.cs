@@ -189,7 +189,7 @@ public class OpenAiService
         catch ( Exception ex ) 
         { 
         
-            _logger.LogError(ex.Message, ex);
+            _logger.LogError(ex.Message);
         
         }
 

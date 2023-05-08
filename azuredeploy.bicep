@@ -83,6 +83,11 @@ var cosmosContainers = {
     partitionKeyPath: '/customerId'
     maxThroughput: 1000
   }
+  leasesContainer: {
+    name: 'leases'
+    partitionKeyPath: '/id'
+    maxThroughput: 1000
+  }
 }
 
 var appServiceSettings = {
@@ -313,8 +318,7 @@ resource appServiceFunctionSettings 'Microsoft.Web/sites/config@2022-03-01' = {
     CosmosDBConnection: cosmosDbAccount.listConnectionStrings().connectionStrings[0].connectionString
     OpenAiEndpoint: openAiAccount.properties.endpoint
     OpenAiKey: openAiAccount.listKeys().key1
-    OpenAiEmbeddings: openAiEmbeddingsModelDeployment.name
-    OpenAiCompletions: openAiCompletionsModelDeployment.name
+    EmbeddingsDeployment: openAiEmbeddingsModelDeployment.name
     OpenAiMaxTokens: '8191'
     RedisConnection: '${redisEnterprise.properties.hostName}:10000,abortConnect=false,ssl=true,password=${redisEnterpriseDatabase.listKeys().primaryKey}'
   }
