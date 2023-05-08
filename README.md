@@ -58,7 +58,7 @@ All connection information for Azure Cosmos DB, Azure OpenAI and Azure Cache for
 
 ### Initial data load
 
-The data for this solution must be loaded once it has been deployed. The process for loading data also starts the process of generating vectors for all of the operational retail data in this solution. Follow the steps below.
+The data for this solution must be loaded once it has been deployed. This process takes approximately 10 minutes to complete. The process for loading data also starts the process of generating vectors for all of the operational retail data in this solution. Follow the steps below.
 
 1. Download and install the [Azure Cosmos DB Data Migration Desktop Tool](https://github.com/AzureCosmosDB/data-migration-desktop-tool/releases)
 1. Copy the `migrationsettings.json` from the root folder of this repository and replace the version in the folder where you downloaded the tool above.
@@ -67,11 +67,15 @@ The data for this solution must be loaded once it has been deployed. The process
 1. Navigate to the Keys blade in Azure Portal and copy the Primary Connection String for the Cosmos DB account.
 1. Paste the connection string to replace to placeholders called `ADD-COSMOS-CONNECTION-STRING`. Save the file.
 1. Run dmt.exe
-1. You can watch Azure Functions processing the data by navigating to Azure Functions in the portal.
+1. You can watch Azure Functions processing the data by navigating to each of the Azure Functions in the portal.
+
+<p align="center">
+    <img src="img/monitorfunctions.png" width="100%">
+</p>
 
 ### Quickstart
 
-1. After deployment, go to the resource group for your deployment and open the Azure App Service in the Azure Portal. Click the link to launch the website.
+1. After data loading is complete, go to the resource group for your deployment and open the Azure App Service in the Azure Portal. Click the link to launch the website.
 1. Click [+ Create New Chat] button to create a new chat session.
 1. Type in your questions in the text box and press Enter.
 
