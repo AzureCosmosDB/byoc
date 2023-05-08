@@ -1,7 +1,6 @@
 ﻿using Microsoft.Azure.Cosmos;
 using System.Text.Json;
 using DataCopilot.Vectorize.Models;
-using Vectorize.Models;
 
 namespace DataCopilot.Vectorize.Services;
 

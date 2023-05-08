@@ -3,7 +3,6 @@ using Microsoft.Extensions.Logging;
 using Newtonsoft.Json.Linq;
 using DataCopilot.Vectorize.Models;
 using DataCopilot.Vectorize.Services;
-using Vectorize.Models;
 
 namespace DataCopilot.Vectorize
 {
@@ -30,6 +29,9 @@ namespace DataCopilot.Vectorize
         {
 
             _redis = new Redis(log);
+
+            await _redis.CreateRedisIndex();
+
             _openAI = new OpenAI();
 
             if (input != null && input.Count > 0)
@@ -39,7 +41,7 @@ namespace DataCopilot.Vectorize
                 {
                     foreach (Product item in input)
                     {
-                        await GenerateProductVectors(item, output, log);
+                         await GenerateProductVectors(item, output, log);
                     }
                 }
                 finally
