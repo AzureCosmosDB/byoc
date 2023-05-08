@@ -5,7 +5,7 @@
     "_generator": {
       "name": "bicep",
       "version": "0.17.1.54307",
-      "templateHash": "7648281261362491262"
+      "templateHash": "9811305873466753703"
     }
   },
   "parameters": {
@@ -108,6 +108,11 @@
       "customerContainer": {
         "name": "customer",
         "partitionKeyPath": "/customerId",
+        "maxThroughput": 1000
+      },
+      "leasesContainer": {
+        "name": "leases",
+        "partitionKeyPath": "/id",
         "maxThroughput": 1000
       }
     },
@@ -351,7 +356,7 @@
         "OPENAI__ENDPOINT": "[reference(resourceId('Microsoft.CognitiveServices/accounts', variables('openAiSettings').name), '2022-12-01').endpoint]",
         "OPENAI__KEY": "[listKeys(resourceId('Microsoft.CognitiveServices/accounts', variables('openAiSettings').name), '2022-12-01').key1]",
         "OPENAI__EMBEDDINGSDEPLOYMENT": "[variables('openAiSettings').embeddingsModel.deployment.name]",
-        "OPENAI__COMLETIONSDEPLOYMENT": "[variables('openAiSettings').embeddingsModel.deployment.name]",
+        "OPENAI__COMPLETIONSDEPLOYMENT": "[variables('openAiSettings').embeddingsModel.deployment.name]",
         "OPENAI__MAXCONVERSATIONBYTES": "[variables('openAiSettings').maxConversationBytes]",
         "REDIS__CONNECTION": "[format('{0}:10000,abortConnect=false,ssl=true,password={1}', reference(resourceId('Microsoft.Cache/redisEnterprise', variables('redisSettings').name), '2022-01-01').hostName, listKeys(resourceId('Microsoft.Cache/redisEnterprise/databases', variables('redisSettings').name, variables('redisSettings').database.name), '2022-01-01').primaryKey)]"
       },
@@ -379,8 +384,7 @@
         "CosmosDBConnection": "[listConnectionStrings(resourceId('Microsoft.DocumentDB/databaseAccounts', variables('cosmosDbSettings').name), '2022-08-15').connectionStrings[0].connectionString]",
         "OpenAiEndpoint": "[reference(resourceId('Microsoft.CognitiveServices/accounts', variables('openAiSettings').name), '2022-12-01').endpoint]",
         "OpenAiKey": "[listKeys(resourceId('Microsoft.CognitiveServices/accounts', variables('openAiSettings').name), '2022-12-01').key1]",
-        "OpenAiEmbeddings": "[variables('openAiSettings').embeddingsModel.deployment.name]",
-        "OpenAiCompletions": "[variables('openAiSettings').completionsModel.deployment.name]",
+        "EmbeddingsDeployment": "[variables('openAiSettings').embeddingsModel.deployment.name]",
         "OpenAiMaxTokens": "8191",
         "RedisConnection": "[format('{0}:10000,abortConnect=false,ssl=true,password={1}', reference(resourceId('Microsoft.Cache/redisEnterprise', variables('redisSettings').name), '2022-01-01').hostName, listKeys(resourceId('Microsoft.Cache/redisEnterprise/databases', variables('redisSettings').name, variables('redisSettings').database.name), '2022-01-01').primaryKey)]"
       },
@@ -389,7 +393,6 @@
         "[resourceId('Microsoft.Insights/components', variables('appServiceSettings').function.name)]",
         "[resourceId('Microsoft.DocumentDB/databaseAccounts', variables('cosmosDbSettings').name)]",
         "[resourceId('Microsoft.CognitiveServices/accounts', variables('openAiSettings').name)]",
-        "[resourceId('Microsoft.CognitiveServices/accounts/deployments', variables('openAiSettings').name, variables('openAiSettings').completionsModel.deployment.name)]",
         "[resourceId('Microsoft.CognitiveServices/accounts/deployments', variables('openAiSettings').name, variables('openAiSettings').embeddingsModel.deployment.name)]",
         "[resourceId('Microsoft.Cache/redisEnterprise', variables('redisSettings').name)]",
         "[resourceId('Microsoft.Cache/redisEnterprise/databases', variables('redisSettings').name, variables('redisSettings').database.name)]",
