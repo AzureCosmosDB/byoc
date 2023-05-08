@@ -3,7 +3,6 @@ using StackExchange.Redis;
 using DataCopilot.Vectorize.Utils;
 using DataCopilot.Vectorize.Models;
 using Microsoft.Azure.Cosmos;
-using Vectorize.Models;
 
 namespace DataCopilot.Vectorize.Services
 {
@@ -19,7 +18,7 @@ namespace DataCopilot.Vectorize.Services
         public Redis(ILogger log)
         {
             this.log = log;
-            CreateRedisIndex();
+            //CreateRedisIndex().Wait();
         }
 
         public IDatabase GetDatabase()
@@ -45,7 +44,7 @@ namespace DataCopilot.Vectorize.Services
                 RedisResult index = null;
                 try
                 {
-                    index = await db.ExecuteAsync("FT.INFO", "embeddingIndex");
+                     index = await db.ExecuteAsync("FT.INFO", "embeddingIndex");
                 }
                 catch (RedisServerException redisX)
                 {

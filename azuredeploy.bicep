@@ -297,7 +297,7 @@ resource appServiceWebSettings 'Microsoft.Web/sites/config@2022-03-01' = {
     OPENAI__EMBEDDINGSDEPLOYMENT: openAiEmbeddingsModelDeployment.name
     OPENAI__COMLETIONSDEPLOYMENT: openAiEmbeddingsModelDeployment.name
     OPENAI__MAXCONVERSATIONBYTES: openAiSettings.maxConversationBytes
-    REDIS__CONNECTION: '${redisEnterprise.properties.hostName},abortConnect=false,ssl=true,password=${redisEnterpriseDatabase.listKeys().primaryKey}'
+    REDIS__CONNECTION: '${redisEnterprise.properties.hostName}:10000,abortConnect=false,ssl=true,password=${redisEnterpriseDatabase.listKeys().primaryKey}'
   }
 }
 
@@ -309,14 +309,14 @@ resource appServiceFunctionSettings 'Microsoft.Web/sites/config@2022-03-01' = {
     AzureWebJobsStorage: 'DefaultEndpointsProtocol=https;AccountName=${name}fnstorage;EndpointSuffix=core.windows.net;AccountKey=${storageAccount.listKeys().keys[0].value}'
     APPINSIGHTS_INSTRUMENTATIONKEY: appServiceFunctionsInsights.properties.ConnectionString
     FUNCTIONS_EXTENSION_VERSION: '~4'
-    FUNCTIONS_WORKER_RUNTIME: 'dotnet-isolated'
+    FUNCTIONS_WORKER_RUNTIME: 'dotnet'
     CosmosDBConnection: cosmosDbAccount.listConnectionStrings().connectionStrings[0].connectionString
     OpenAiEndpoint: openAiAccount.properties.endpoint
     OpenAiKey: openAiAccount.listKeys().key1
     OpenAiEmbeddings: openAiEmbeddingsModelDeployment.name
     OpenAiCompletions: openAiCompletionsModelDeployment.name
     OpenAiMaxTokens: '8191'
-    RedisConnection: '${redisEnterprise.properties.hostName},abortConnect=false,ssl=true,password=${redisEnterpriseDatabase.listKeys().primaryKey}'
+    RedisConnection: '${redisEnterprise.properties.hostName}:10000,abortConnect=false,ssl=true,password=${redisEnterpriseDatabase.listKeys().primaryKey}'
   }
 }
 

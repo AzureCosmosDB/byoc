@@ -3,7 +3,6 @@ using Microsoft.Extensions.Logging;
 using Newtonsoft.Json.Linq;
 using DataCopilot.Vectorize.Models;
 using DataCopilot.Vectorize.Services;
-using Vectorize.Models;
 
 namespace DataCopilot.Vectorize
 {
@@ -32,6 +31,8 @@ namespace DataCopilot.Vectorize
 
             _openAI = new OpenAI();
             _redis = new Redis(log);
+
+            await _redis.CreateRedisIndex();
 
             if (input != null && input.Count > 0)
             {

@@ -4,7 +4,7 @@ using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
 
-namespace Vectorize.Models
+namespace DataCopilot.Vectorize.Models
 {
     public record DocumentVector
     {
