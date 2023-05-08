@@ -1,6 +1,6 @@
 {
     "python.envFile": "${workspaceFolder}\\.databricks\\.databricks.env",
-    "azureFunctions.deploySubpath": "Vectorize/bin/Release/net7.0/publish",
+    "azureFunctions.deploySubpath": "Vectorize/bin/Release/net6.0/publish",
     "azureFunctions.projectLanguage": "C#",
     "azureFunctions.projectRuntime": "~4",
     "debug.internalConsoleOptions": "neverOpen",
