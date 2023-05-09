@@ -112,7 +112,7 @@ This solution can be run locally post deployment. Below are the prerequisites an
 
 #### Vectorize Azure Function
 - Open the Configuration for the Azure Function copy the application setting values.
-- Within Visual Studio, right click the Vectorize project, then copy the contents of local.settings.json and the application setting values into the User Secrets. If not using Visual Studio, create an `local.settings.Development.json` file and copy the local.settings.json and values into it.
+- Within Visual Studio, right click the Vectorize project, then copy the contents of the configuration values into User Secrets or local.settings.json if not using Visual Studio.
 
 
 
